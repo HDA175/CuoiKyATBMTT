@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
 using CuoiKy.Models;
+using CuoiKy.Utils;
 
 namespace CuoiKy.Controllers
 {
@@ -14,6 +15,10 @@ namespace CuoiKy.Controllers
         // GET: Delivery - Danh sách đơn hàng cần giao
         public ActionResult Index(string searchString, string trangThai)
         {
+            // Chống SQL Injection: sanitize search
+            searchString = SecurityHelper.SanitizeForSearch(searchString ?? "", 100);
+            if (searchString == null) searchString = "";
+
             var query = db.DonHangs
                 .Include(d => d.KhachHang)
                 .Include(d => d.NguoiNhans)

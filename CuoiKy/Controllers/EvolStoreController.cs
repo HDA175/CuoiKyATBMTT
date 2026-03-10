@@ -1,4 +1,5 @@
-﻿using CuoiKy.Models;
+using CuoiKy.Models;
+using CuoiKy.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -134,7 +135,11 @@ namespace CuoiKy.Controllers
         {
             var sanPhams = db.SanPhams.AsQueryable();
 
-            // Lọc theo loại sản phẩm
+            // Chống SQL Injection: validate/sanitize search input
+            search = SecurityHelper.SanitizeForSearch(search ?? "", 100);
+            if (search == null) search = ""; // null = chứa pattern nguy hiểm
+
+            // Chống SQL Injection: filter dùng whitelist (switch case) - loai, chatLieu, mucGia đã an toàn
             if (!string.IsNullOrEmpty(loai))
             {
                 switch (loai.ToLower())
@@ -284,10 +289,15 @@ namespace CuoiKy.Controllers
                 int maKH = (int)Session["MaKH"];
                 System.Diagnostics.Debug.WriteLine($"MaKH từ Session: {maKH}");
 
-                // Kiểm tra dữ liệu
+                // Kiểm tra dữ liệu và chống SQL Injection
                 if (string.IsNullOrEmpty(noiDung))
                 {
                     return Json(new { success = false, message = "Vui lòng nhập nội dung đánh giá!" });
+                }
+                noiDung = SecurityHelper.SanitizeForComment(noiDung, 500);
+                if (noiDung == null)
+                {
+                    return Json(new { success = false, message = "Nội dung đánh giá chứa ký tự không hợp lệ!" });
                 }
 
                 if (diem < 1 || diem > 5)
@@ -447,10 +457,15 @@ namespace CuoiKy.Controllers
                     return Json(new { success = false, message = "Bạn không có quyền sửa đánh giá này!" });
                 }
 
-                // Kiểm tra dữ liệu
+                // Kiểm tra dữ liệu và chống SQL Injection
                 if (string.IsNullOrEmpty(noiDung))
                 {
                     return Json(new { success = false, message = "Vui lòng nhập nội dung đánh giá!" });
+                }
+                noiDung = SecurityHelper.SanitizeForComment(noiDung, 500);
+                if (noiDung == null)
+                {
+                    return Json(new { success = false, message = "Nội dung đánh giá chứa ký tự không hợp lệ!" });
                 }
 
                 if (diem < 1 || diem > 5)

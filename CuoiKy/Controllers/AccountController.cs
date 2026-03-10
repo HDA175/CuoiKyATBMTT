@@ -1,4 +1,5 @@
-﻿using CuoiKy.Models;
+using CuoiKy.Models;
+using CuoiKy.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -241,8 +242,14 @@ namespace CuoiKy.Controllers
                     return View(model);
                 }
 
-                // Kiểm tra mật khẩu cũ
-                if (taiKhoan.MatKhau != model.OldPassword)
+                // Kiểm tra mật khẩu cũ - BCrypt hoặc backward compatibility
+                bool oldPasswordValid = false;
+                if (SecurityHelper.IsBcryptHash(taiKhoan.MatKhau))
+                    oldPasswordValid = SecurityHelper.VerifyPassword(model.OldPassword, taiKhoan.MatKhau);
+                else
+                    oldPasswordValid = taiKhoan.MatKhau == model.OldPassword;
+
+                if (!oldPasswordValid)
                 {
                     ModelState.AddModelError("OldPassword", "Mật khẩu cũ không chính xác");
                     return View(model);
@@ -255,8 +262,8 @@ namespace CuoiKy.Controllers
                     return View(model);
                 }
 
-                // Cập nhật mật khẩu
-                taiKhoan.MatKhau = model.NewPassword;
+                // Cập nhật mật khẩu - BCrypt hash, không lưu dạng text
+                taiKhoan.MatKhau = SecurityHelper.HashPassword(model.NewPassword);
                 db.Entry(taiKhoan).State = EntityState.Modified;
                 db.SaveChanges();
 
