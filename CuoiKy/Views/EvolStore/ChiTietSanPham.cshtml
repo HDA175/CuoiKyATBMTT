@@ -1,0 +1,2542 @@
+﻿﻿@model CuoiKy.Models.SanPham
+@using CuoiKy.Models
+@{
+    Layout = null;
+    var sanPhamLienQuan = ViewBag.SanPhamLienQuan as List<CuoiKy.Models.SanPham> ?? new List<CuoiKy.Models.SanPham>();
+    var danhGiaList = ViewBag.DanhGia as List<DanhGia> ?? new List<DanhGia>();
+    var diemTrungBinh = ViewBag.DiemTrungBinh != null ? (double)ViewBag.DiemTrungBinh : 0;
+    var tongDanhGia = ViewBag.TongDanhGia != null ? (int)ViewBag.TongDanhGia : 0;
+    var searchTerm = ViewBag.SearchTerm as string ?? "";
+
+    // Tính toán giảm giá cho sản phẩm chính
+    decimal phanTramGiam = 0;
+    decimal giaGoc = Model.Gia;
+    bool coGiamGia = false;
+    decimal soTienGiam = 0;
+
+    if (Model.GiamGias != null && Model.GiamGias.Any())
+    {
+        var giamGiaHienTai = Model.GiamGias
+            .Where(g => g.NgayBatDau <= DateTime.Now &&
+                       (g.NgayKetThuc == null || g.NgayKetThuc >= DateTime.Now))
+            .OrderByDescending(g => g.PhanTramGiam)
+            .FirstOrDefault();
+
+        if (giamGiaHienTai != null && giamGiaHienTai.PhanTramGiam > 0)
+        {
+            phanTramGiam = Math.Round(giamGiaHienTai.PhanTramGiam * 100, 0);
+            giaGoc = Math.Round(Model.Gia / (1 - giamGiaHienTai.PhanTramGiam), 0);
+            soTienGiam = giaGoc - Model.Gia;
+            coGiamGia = true;
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@Model.TenSP - EvolStore</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ===========================
+           RESET & VARIABLES
+           =========================== */
+        :root {
+            --header-height: 110px;
+            --sidebar-width: 300px;
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --danger: #e74c3c;
+            --danger-light: #ff6b9d;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --text: #333;
+            --muted: #7f8c8d;
+            --page-bg: #f8f9fa;
+            --border: #e0e0e0;
+            --light-bg: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--page-bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        /* ===========================
+           HEADER
+           =========================== */
+        .header-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(0,0,0,.9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 10%;
+            transition: .3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,.12);
+        }
+
+            .header-top.scrolled {
+                padding: 12px 10%;
+                background: rgba(0,0,0,.95);
+            }
+
+            .header-top .logo img {
+                width: 200px;
+                border-radius: 12px;
+                transition: .25s ease;
+            }
+
+            .header-top.scrolled .logo img {
+                width: 160px;
+            }
+
+        .user-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+            .user-actions a {
+                text-decoration: none;
+                color: #fff;
+                font-weight: 600;
+                padding: 10px 15px;
+                border-radius: 8px;
+                transition: .25s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                position: relative;
+            }
+
+                .user-actions a:hover {
+                    background: rgba(255,255,255,.15);
+                    color: #a8e6cf;
+                    transform: translateY(-2px);
+                }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* ===========================
+           USER DROPDOWN
+           =========================== */
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+            .user-info:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: rgb(190, 230, 228);
+            }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+            margin-left: auto;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 200px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            padding: 8px 0;
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: black !important;
+            font-size: 14px;
+            font-weight: normal;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f8f9fa;
+                color: #007bff !important;
+            }
+
+            .dropdown-item i {
+                width: 16px;
+                text-align: center;
+                font-size: 14px;
+            }
+
+        .logout-item:hover {
+            background-color: #fff5f5 !important;
+            color: #dc3545 !important;
+        }
+
+        /* ===========================
+           SEARCH
+           =========================== */
+        .search-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,.1);
+            border-radius: 30px;
+            padding: 8px 15px;
+            transition: all .35s ease;
+            width: 50px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+            .search-box.active {
+                width: 280px;
+                background: rgba(255,255,255,.15);
+                cursor: text;
+                border-color: rgba(255,255,255,.3);
+            }
+
+        .search-icon {
+            color: #fff;
+            font-size: 18px;
+            transition: .25s ease;
+            flex-shrink: 0;
+        }
+
+        .search-box:hover .search-icon {
+            color: #a8e6cf;
+            transform: scale(1.1);
+        }
+
+        .search-box.active .search-icon {
+            color: #a8e6cf;
+        }
+
+        .search-input {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            color: #fff;
+            font-size: 15px;
+            padding: 8px 12px;
+            width: 0;
+            opacity: 0;
+            transition: .25s ease;
+        }
+
+            .search-input::placeholder {
+                color: rgba(255,255,255,.7);
+            }
+
+        .search-box.active .search-input {
+            width: 100%;
+            opacity: 1;
+        }
+
+        /* ===========================
+           PRODUCT DETAIL STYLES
+           =========================== */
+        .product-detail-container {
+            margin-top: 150px;
+            padding: 40px 10%;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        .back-to-shop {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+            .back-to-shop:hover {
+                background: var(--primary-dark);
+                transform: translateX(-5px);
+            }
+
+        .product-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 60px;
+        }
+
+        /* ===========================
+           PRODUCT IMAGES
+           =========================== */
+        .product-images {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 15px;
+            background: #f8f9fa;
+            transition: transform 0.3s ease;
+        }
+
+            .main-image:hover {
+                transform: scale(1.02);
+            }
+
+        .thumbnail-images {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+            .thumbnail:hover,
+            .thumbnail.active {
+                border-color: var(--primary);
+                transform: scale(1.05);
+            }
+
+        /* ===========================
+           PRODUCT INFO
+           =========================== */
+        .product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .product-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+
+        /* ===========================
+           PRICE STYLES WITH DISCOUNT
+           =========================== */
+        .price-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .discount-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--danger-light), var(--danger));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .original-price {
+            font-size: 1.4rem;
+            color: #95a5a6;
+            text-decoration: line-through;
+            font-weight: 500;
+        }
+
+        .current-price {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--danger);
+        }
+
+        .discount-percentage {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--danger);
+        }
+
+        .save-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--success);
+            font-weight: 600;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 6px;
+        }
+
+            .save-info i {
+                font-size: 1.1rem;
+            }
+
+        .product-description {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 1.1rem;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ===========================
+           PRODUCT META INFO
+           =========================== */
+        .product-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .meta-item {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .in-stock {
+            color: var(--success);
+        }
+
+        .out-of-stock {
+            color: var(--danger);
+        }
+
+        /* ===========================
+           SELECTION OPTIONS
+           =========================== */
+        .selection-group {
+            margin: 20px 0;
+        }
+
+        .selection-label {
+            display: block;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .size-options, .color-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .size-option, .color-option {
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 60px;
+            font-weight: 500;
+        }
+
+            .size-option:hover, .color-option:hover {
+                border-color: var(--primary);
+                background: rgba(52, 152, 219, 0.1);
+            }
+
+            .size-option.selected, .color-option.selected {
+                border-color: var(--primary);
+                background: var(--primary);
+                color: white;
+            }
+
+        .color-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px var(--border);
+        }
+
+        /* ===========================
+           ACTION SECTION
+           =========================== */
+        .action-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .quantity-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+            .quantity-btn:hover:not(:disabled) {
+                background: #e9ecef;
+            }
+
+            .quantity-btn:disabled {
+                color: #bdc3c7;
+                cursor: not-allowed;
+            }
+
+        .quantity-input {
+            width: 60px;
+            height: 45px;
+            border: none;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            outline: none;
+            background: white;
+        }
+
+        .add-to-cart-btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+            .add-to-cart-btn:hover:not(:disabled) {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            }
+
+            .add-to-cart-btn:disabled {
+                background: #bdc3c7;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+        .buy-now-btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--success), #27ae60);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+
+            .buy-now-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+            }
+
+        /* ===========================
+           RATING SECTION
+           =========================== */
+        .rating-section {
+            margin: 40px 0;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .rating-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .rating-header {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .average-rating {
+            text-align: center;
+        }
+
+        .rating-score {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 3px;
+            margin: 10px 0;
+            justify-content: center;
+        }
+
+        .star {
+            color: #ddd;
+            font-size: 1.5rem;
+        }
+
+            .star.filled {
+                color: #ffc107;
+            }
+
+        .rating-count {
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        /* Rating Form */
+        .rating-form {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .star-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            direction: ltr;
+        }
+
+            .star-input input {
+                display: none;
+            }
+
+            .star-input label {
+                font-size: 2.5rem;
+                color: #ddd;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+                .star-input label:hover,
+                .star-input label:hover ~ label {
+                    color: #ffc107;
+                }
+
+            .star-input input:checked ~ label {
+                color: #ffc107;
+            }
+
+        .comment-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.3s ease;
+        }
+
+            .comment-input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            }
+
+        .submit-rating {
+            background: linear-gradient(135deg, var(--success), #27ae60);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .submit-rating:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+            }
+
+        /* Rating List */
+        .rating-list {
+            margin-top: 40px;
+        }
+
+        .rating-item {
+            padding: 25px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .rating-item:last-child {
+                border-bottom: none;
+            }
+
+        .rating-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .customer-name {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+            .customer-name .you-tag {
+                color: var(--primary);
+                font-size: 0.9rem;
+                margin-left: 8px;
+            }
+
+        .rating-date {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .rating-item-stars {
+            margin-bottom: 15px;
+        }
+
+        .rating-comment {
+            color: #555;
+            line-height: 1.6;
+            font-size: 1.05rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-review-btn, .delete-review-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .edit-review-btn {
+            color: var(--primary);
+        }
+
+            .edit-review-btn:hover {
+                background: var(--primary);
+                color: white;
+            }
+
+        .delete-review-btn {
+            color: var(--danger);
+        }
+
+            .delete-review-btn:hover {
+                background: var(--danger);
+                color: white;
+            }
+
+        .no-reviews {
+            text-align: center;
+            padding: 60px 40px;
+            color: var(--muted);
+        }
+
+            .no-reviews i {
+                font-size: 4rem;
+                margin-bottom: 20px;
+                color: #bdc3c7;
+            }
+
+            .no-reviews h3 {
+                font-size: 1.8rem;
+                margin-bottom: 15px;
+            }
+
+        /* Edit Review Form */
+        .edit-review-form {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            animation: slideDown 0.3s ease;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .edit-stars {
+            display: flex;
+            gap: 5px;
+            direction: ltr;
+        }
+
+            .edit-stars input {
+                display: none;
+            }
+
+            .edit-stars label {
+                font-size: 2rem;
+                color: #ddd;
+                cursor: pointer;
+                transition: color 0.2s ease;
+            }
+
+                .edit-stars label:hover,
+                .edit-stars label:hover ~ label {
+                    color: #ffc107 !important;
+                }
+
+            .edit-stars input:checked ~ label {
+                color: #ffc107 !important;
+            }
+
+        .edit-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-save-edit, .btn-cancel-edit {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save-edit {
+            background: var(--success);
+            color: white;
+        }
+
+            .btn-save-edit:hover {
+                background: #27ae60;
+                transform: translateY(-2px);
+            }
+
+        .btn-cancel-edit {
+            background: #95a5a6;
+            color: white;
+        }
+
+            .btn-cancel-edit:hover {
+                background: #7f8c8d;
+                transform: translateY(-2px);
+            }
+
+        /* ===========================
+           RELATED PRODUCTS
+           =========================== */
+        .related-products {
+            margin-top: 60px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #2c3e50;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .related-product-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,.08);
+            transition: .3s ease;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+
+            .related-product-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 12px 25px rgba(0,0,0,.15);
+                text-decoration: none;
+                color: inherit;
+            }
+
+        .related-product-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+
+        .related-product-info {
+            padding: 20px;
+        }
+
+        .related-product-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            line-height: 1.4;
+            height: 2.8em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        /* Discount badge for related products */
+        .discount-badge-small {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 2;
+            background: linear-gradient(135deg, var(--danger-light), var(--danger));
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .out-of-stock-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 2;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .related-price-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .related-original-price {
+            font-size: 0.95rem;
+            color: #95a5a6;
+            text-decoration: line-through;
+            font-weight: 500;
+        }
+
+        .related-current-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--danger);
+        }
+
+        /* ===========================
+           CART SIDEBAR
+           =========================== */
+        .cart-sidebar {
+            position: fixed;
+            top: 0;
+            right: -600px;
+            width: 580px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+            transition: right 0.4s ease;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .cart-sidebar.active {
+                right: 0;
+            }
+
+        .cart-header {
+            padding: 25px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .close-cart {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+            .close-cart:hover {
+                background: rgba(255,255,255,0.2);
+            }
+
+        .cart-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .cart-items {
+            margin-bottom: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cart-item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+
+        .cart-item-details {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .cart-item-variant {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .cart-item-price {
+            font-weight: 700;
+            color: var(--danger);
+        }
+
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .quantity-btn {
+            background: none;
+            border: none;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .quantity-input {
+            width: 40px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+        }
+
+        .remove-item {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+        }
+
+        .cart-summary {
+            padding: 20px;
+            background: white;
+            border-top: 2px solid var(--border);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .summary-total {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--danger);
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .cart-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+
+            .cart-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+        .continue-shopping {
+            display: block;
+            text-align: center;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        /* ===========================
+           TOAST NOTIFICATION
+           =========================== */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 10001;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+            .toast.error {
+                background: var(--danger);
+            }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ===========================
+           RESPONSIVE DESIGN
+           =========================== */
+        @@media (max-width: 1200px) {
+            .product-detail-container {
+                padding: 30px 5%;
+            }
+
+            .header-top {
+                padding: 20px 5%;
+            }
+        }
+
+        @@media (max-width: 992px) {
+            .product-detail {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .main-image {
+                height: 400px;
+            }
+
+            .related-grid {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .header-top {
+                padding: 15px 3%;
+            }
+
+            .product-detail-container {
+                margin-top: 130px;
+                padding: 20px 3%;
+            }
+
+            .product-title {
+                font-size: 1.8rem;
+            }
+
+            .current-price {
+                font-size: 1.8rem;
+            }
+
+            .action-section {
+                flex-direction: column;
+            }
+
+            .add-to-cart-btn,
+            .buy-now-btn {
+                width: 100%;
+            }
+
+            .product-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .cart-sidebar {
+                width: 90%;
+                right: -90%;
+            }
+
+            .rating-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .user-info span:not(.dropdown-arrow) {
+                display: none;
+            }
+
+            .user-info {
+                min-width: auto;
+                padding: 8px;
+            }
+
+            .main-image {
+                height: 300px;
+            }
+
+            .thumbnail {
+                width: 60px;
+                height: 60px;
+            }
+
+            .related-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .related-product-image {
+                height: 200px;
+            }
+
+            .rating-form {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header-top" id="headerTop">
+        <div class="logo">
+            <a href="@Url.Action("Index", "EvolStore")">
+                <img src="/images/logo.jpg" alt="logo" />
+            </a>
+        </div>
+        <div class="user-actions">
+            <!-- Search Box -->
+            <div class="search-container">
+                <div class="search-box @(!string.IsNullOrEmpty(searchTerm) ? "active" : "")" id="searchBox">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm sản phẩm..."
+                           id="searchInput" value="@searchTerm">
+                </div>
+            </div>
+
+            <!-- Giỏ hàng -->
+            <a href="#" id="cartButton">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>GIỎ HÀNG</span>
+                <span class="cart-count" id="cartCount" style="display: none;">0</span>
+            </a>
+
+            <!-- Đăng nhập -->
+            @if (Session["TenKhachHang"] != null)
+            {
+                <div class="user-dropdown">
+                    <div class="user-info">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <span>Xin chào, @Session["TenKhachHang"]</span>
+                        <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="@Url.Action("TaiKhoan", "User")" class="dropdown-item">
+                            <i class="fa-solid fa-user"></i>
+                            <span>Tài khoản của tôi</span>
+                        </a>
+                        <a href="@Url.Action("Logout", "User")" class="dropdown-item logout-item">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Đăng xuất</span>
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                var returnUrl = Request.Url?.PathAndQuery;
+                <a href="@Url.Action("Login", "User", new { returnUrl = returnUrl })">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span>ĐĂNG NHẬP</span>
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- PRODUCT DETAIL CONTENT -->
+    <div class="product-detail-container">
+        <a href="@Url.Action("CuaHang", "EvolStore")" class="back-to-shop">
+            <i class="fas fa-arrow-left"></i> Quay lại cửa hàng
+        </a>
+
+        <div class="product-detail">
+            <!-- Product Images -->
+            <div class="product-images">
+                <img src="~/Images/@(Model.MaSP + "a.jpg")" alt="@Model.TenSP" class="main-image" id="mainImage">
+                <div class="thumbnail-images">
+                    <img src="~/Images/@(Model.MaSP + "a.jpg")" alt="@Model.TenSP" class="thumbnail active" onclick="changeImage(this)">
+                    <img src="~/Images/@(Model.MaSP + "b.jpg")" alt="@Model.TenSP" class="thumbnail" onclick="changeImage(this)">
+                    <img src="~/Images/@(Model.MaSP + "c.jpg")" alt="@Model.TenSP" class="thumbnail" onclick="changeImage(this)">
+                    <img src="~/Images/@(Model.MaSP + "d.jpg")" alt="@Model.TenSP" class="thumbnail" onclick="changeImage(this)">
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="product-info">
+                <h1 class="product-title">@Model.TenSP</h1>
+
+                <!-- Price with Discount -->
+                <div class="price-container">
+                    @if (coGiamGia)
+                    {
+                        <div class="discount-tag">
+                            <i class="fas fa-tag"></i> GIẢM @phanTramGiam.ToString("0")%
+                        </div>
+                    }
+
+                    <div class="price-row">
+                        @if (coGiamGia)
+                        {
+                            <div class="original-price">@giaGoc.ToString("N0") ₫</div>
+                        }
+                        <div class="current-price">@Model.Gia.ToString("N0") ₫</div>
+                        @if (coGiamGia)
+                        {
+                            <div class="discount-percentage">(-@phanTramGiam.ToString("0")%)</div>
+                        }
+                    </div>
+
+                    @if (coGiamGia)
+                    {
+                        <div class="save-info">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Tiết kiệm: @soTienGiam.ToString("N0") ₫</span>
+                        </div>
+                    }
+                </div>
+
+                <p class="product-description">
+                    @(string.IsNullOrEmpty(Model.MoTa) ? "Sản phẩm chất lượng cao, thiết kế thời trang và hiện đại. Với chất liệu tốt và kiểu dáng phù hợp với nhiều phong cách." : Model.MoTa)
+                </p>
+
+                <!-- Product Meta Info -->
+                <div class="product-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Loại sản phẩm:</span>
+                        <span class="meta-value">@Model.Loai</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Chất liệu:</span>
+                        <span class="meta-value">@(string.IsNullOrEmpty(Model.ChatLieu) ? "Cotton" : Model.ChatLieu)</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Tình trạng:</span>
+                        <span class="meta-value @(Model.SoLuongTon > 0 ? "in-stock" : "out-of-stock")">
+                            @(Model.SoLuongTon > 0 ? "Còn hàng" : "Hết hàng")
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Số lượng tồn:</span>
+                        <span class="meta-value">@Model.SoLuongTon sản phẩm</span>
+                    </div>
+                </div>
+
+                <!-- Size Selection -->
+                <div class="selection-group">
+                    <label class="selection-label">Kích thước:</label>
+                    <div class="size-options">
+                        <div class="size-option selected" data-size="S">S</div>
+                        <div class="size-option" data-size="M">M</div>
+                        <div class="size-option" data-size="L">L</div>
+                        <div class="size-option" data-size="XL">XL</div>
+                    </div>
+                </div>
+
+                <!-- Color Selection -->
+                <div class="selection-group">
+                    <label class="selection-label">Màu sắc:</label>
+                    <div class="color-options">
+                        <div class="color-option selected" data-color="Đen">
+                            <span class="color-dot" style="background: #000;"></span>
+                            Đen
+                        </div>
+                        <div class="color-option" data-color="Trắng">
+                            <span class="color-dot" style="background: #fff; border: 1px solid #ddd;"></span>
+                            Trắng
+                        </div>
+                        <div class="color-option" data-color="Xanh Dương">
+                            <span class="color-dot" style="background: #3498db;"></span>
+                            Xanh Dương
+                        </div>
+                        <div class="color-option" data-color="Đỏ">
+                            <span class="color-dot" style="background: #e74c3c;"></span>
+                            Đỏ
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-section">
+                    <div class="quantity-selector">
+                        <button class="quantity-btn" onclick="decreaseQuantity()">-</button>
+                        <input type="text" class="quantity-input" id="quantity" value="1" readonly>
+                        <button class="quantity-btn" onclick="increaseQuantity()">+</button>
+                    </div>
+
+                    @if (Model.SoLuongTon > 0)
+                    {
+                        <button class="add-to-cart-btn" onclick="addToCart()">
+                            <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
+                        </button>
+                        <button class="buy-now-btn" onclick="buyNow()">
+                            <i class="fas fa-bolt"></i> MUA NGAY
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="add-to-cart-btn" disabled>
+                            <i class="fas fa-times"></i> HẾT HÀNG
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating Section -->
+        <div class="rating-section">
+            <h2 class="rating-title">ĐÁNH GIÁ SẢN PHẨM</h2>
+
+            <!-- Rating Overview -->
+            <div class="rating-header">
+                <div class="average-rating">
+                    <div class="rating-score" id="averageRating">@diemTrungBinh.ToString("0.0")</div>
+                    <div class="star-rating" id="averageStars">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <span class="star @(i <= diemTrungBinh ? "filled" : "")">★</span>
+                        }
+                    </div>
+                    <div class="rating-count">@tongDanhGia đánh giá</div>
+                </div>
+            </div>
+
+            <!-- Rating Form -->
+            <div class="rating-form">
+                <h3 style="margin-bottom: 25px;">Viết đánh giá của bạn</h3>
+                <div class="form-group">
+                    <label class="form-label">Đánh giá của bạn *</label>
+                    <div class="star-input">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <input type="radio" id="star@(i)" name="rating" value="@i">
+                            <label for="star@(i)">★</label>
+                        }
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nhận xét của bạn *</label>
+                    <textarea class="comment-input" id="commentText" placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này..."></textarea>
+                </div>
+
+                @if (Session["TenKhachHang"] != null)
+                {
+                    <button class="submit-rating" onclick="submitRating()">
+                        <i class="fas fa-paper-plane"></i> GỬI ĐÁNH GIÁ
+                    </button>
+                }
+                else
+                {
+                    <button class="submit-rating" type="button" onclick="checkLoginBeforeSubmit()">
+                        <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP ĐỂ ĐÁNH GIÁ
+                    </button>
+                }
+            </div>
+
+            <!-- Rating List -->
+            <div class="rating-list" id="ratingList">
+                @if (danhGiaList.Any())
+                {
+                    foreach (var review in danhGiaList)
+                    {
+                        bool isCurrentUser = Session["MaKH"] != null && review.MaKH == (int)Session["MaKH"];
+
+                        <div class="rating-item" id="review-@review.MaDG">
+                            <div class="rating-item-header">
+                                <div>
+                                    <span class="customer-name">
+                                        @(review.KhachHang != null ? review.KhachHang.HoTen : "Khách hàng")
+                                        @if (isCurrentUser)
+                                        {
+                                            <span class="you-tag">(Bạn)</span>
+                                        }
+                                    </span>
+                                    
+                                </div>
+
+                                @if (isCurrentUser)
+                                {
+                                    <div class="action-buttons">
+                                        <button class="edit-review-btn" onclick="editReview(@review.MaDG, '@review.NoiDung.Replace("'", "\\'")', @review.Diem)"
+                                                title="Sửa đánh giá">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="delete-review-btn" onclick="deleteReview(@review.MaDG)"
+                                                title="Xóa đánh giá">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="rating-item-stars" id="stars-@review.MaDG">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <span class="star @(i <= (review.Diem ?? 0) ? "filled" : "")">★</span>
+                                }
+                            </div>
+
+                            <div class="rating-comment" id="comment-@review.MaDG">
+                                @review.NoiDung
+                            </div>
+
+                            <!-- Edit Review Form (hidden by default) -->
+                            @if (isCurrentUser)
+                            {
+                                <div class="edit-review-form" id="edit-form-@review.MaDG" style="display: none;">
+                                    <h4 style="margin-bottom: 15px; color: #2c3e50;">Sửa đánh giá</h4>
+                                    <div class="form-group">
+                                        <label class="form-label">Đánh giá của bạn *</label>
+                                        <div class="star-input edit-stars" id="edit-stars-@review.MaDG">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <input type="radio" id="edit-star-@review.MaDG-@i"
+                                                       name="edit-rating-@review.MaDG" value="@i"
+                                                       @(i == review.Diem ? "checked" : "")>
+                                                <label for="edit-star-@review.MaDG-@i">★</label>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Nhận xét của bạn *</label>
+                                        <textarea class="comment-input edit-comment" id="edit-comment-@review.MaDG"
+                                                  placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này...">@review.NoiDung</textarea>
+                                    </div>
+                                    <div class="edit-actions">
+                                        <button class="btn-save-edit" onclick="saveEdit(@review.MaDG)">
+                                            <i class="fas fa-save"></i> Lưu thay đổi
+                                        </button>
+                                        <button class="btn-cancel-edit" onclick="cancelEdit(@review.MaDG)">
+                                            <i class="fas fa-times"></i> Hủy
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-reviews">
+                        <i class="fas fa-comments"></i>
+                        <h3>Chưa có đánh giá nào</h3>
+                        <p>Hãy là người đầu tiên đánh giá sản phẩm này!</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Related Products -->
+        @if (sanPhamLienQuan.Any())
+        {
+            <div class="related-products">
+                <h2 class="section-title">SẢN PHẨM LIÊN QUAN</h2>
+                <div class="related-grid">
+                    @foreach (var product in sanPhamLienQuan)
+                    {
+                        // Tính toán giảm giá cho sản phẩm liên quan
+                        decimal phanTramGiamRL = 0;
+                        decimal giaGocRL = product.Gia;
+                        bool coGiamGiaRL = false;
+
+                        if (product.GiamGias != null && product.GiamGias.Any())
+                        {
+                            var giamGiaHienTaiRL = product.GiamGias
+                                .Where(g => g.NgayBatDau <= DateTime.Now &&
+                                           (g.NgayKetThuc == null || g.NgayKetThuc >= DateTime.Now))
+                                .OrderByDescending(g => g.PhanTramGiam)
+                                .FirstOrDefault();
+
+                            if (giamGiaHienTaiRL != null && giamGiaHienTaiRL.PhanTramGiam > 0)
+                            {
+                                phanTramGiamRL = Math.Round(giamGiaHienTaiRL.PhanTramGiam * 100, 0);
+                                giaGocRL = Math.Round(product.Gia / (1 - giamGiaHienTaiRL.PhanTramGiam), 0);
+                                coGiamGiaRL = true;
+                            }
+                        }
+
+                        <a href="@Url.Action("ChiTietSanPham", "EvolStore", new { id = product.MaSP })" class="related-product-card">
+                            @if (coGiamGiaRL)
+                            {
+                                <div class="discount-badge-small">
+                                    -@phanTramGiamRL.ToString("0")%
+                                </div>
+                            }
+                            @if (product.SoLuongTon <= 0)
+                            {
+                                <div class="out-of-stock-badge">
+                                    HẾT HÀNG
+                                </div>
+                            }
+                            <img src="~/Images/@(product.MaSP + "a.jpg")" alt="@product.TenSP" class="related-product-image">
+                            <div class="related-product-info">
+                                <h3 class="related-product-name">@product.TenSP</h3>
+                                <div class="related-price-container">
+                                    @if (coGiamGiaRL)
+                                    {
+                                        <div class="related-original-price">
+                                            @giaGocRL.ToString("N0") ₫
+                                        </div>
+                                        <div class="related-current-price">
+                                            @product.Gia.ToString("N0") ₫
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="related-current-price">
+                                            @product.Gia.ToString("N0") ₫
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- FOOTER -->
+    @Html.Action("FooterPartial", "EvolStore")
+
+    <!-- Cart Sidebar -->
+    <div class="cart-overlay" id="cartOverlay"></div>
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h2 class="cart-title">GIỎ HÀNG</h2>
+            <button class="close-cart" onclick="closeCart()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cart-content">
+            <div class="cart-items" id="cartItems">
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h3>Giỏ hàng trống</h3>
+                    <p>Hãy thêm sản phẩm vào giỏ hàng của bạn</p>
+                </div>
+            </div>
+        </div>
+        <div class="cart-summary" id="cartSummary" style="display: none;">
+            <div class="summary-row">
+                <span>Tạm tính:</span>
+                <span id="subtotal">0 ₫</span>
+            </div>
+            <div class="summary-row">
+                <span>Phí vận chuyển:</span>
+                <span>30,000 ₫</span>
+            </div>
+            <div class="summary-row">
+                <span>Giảm giá:</span>
+                <span>-0 ₫</span>
+            </div>
+            <div class="summary-row summary-total">
+                <span>Tổng cộng:</span>
+                <span id="total">30,000 ₫</span>
+            </div>
+
+            <button class="checkout-btn" onclick="checkout()">
+                <i class="fas fa-credit-card"></i> ĐẶT MUA
+            </button>
+
+            <a href="@Url.Action("CuaHang", "EvolStore")" class="continue-shopping">
+                <i class="fas fa-arrow-left"></i> TIẾP TỤC MUA SẮM
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ===========================
+        // GLOBAL VARIABLES
+        // ===========================
+        let cart = JSON.parse(localStorage.getItem('evolstore_cart')) || [];
+        let selectedSize = 'S';
+        let selectedColor = 'Đen';
+        let selectedRating = 0;
+        let editingReviewId = null;
+
+        // ===========================
+        // PAGE INITIALIZATION
+        // ===========================
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+            loadCartItems();
+            initSelections();
+            initRating();
+            initSearch();
+
+            // Header scroll effect
+            window.addEventListener('scroll', function () {
+                const headerTop = document.getElementById('headerTop');
+                if (window.scrollY > 50) {
+                    headerTop.classList.add('scrolled');
+                } else {
+                    headerTop.classList.remove('scrolled');
+                }
+            });
+        });
+
+        // ===========================
+        // SEARCH FUNCTIONALITY
+        // ===========================
+        function initSearch() {
+            const searchBox = document.getElementById('searchBox');
+            const searchInput = document.getElementById('searchInput');
+
+            searchBox.addEventListener('click', function (e) {
+                e.stopPropagation();
+                searchBox.classList.add('active');
+                searchInput.focus();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!searchBox.contains(e.target) && searchInput.value.trim() === '') {
+                    searchBox.classList.remove('active');
+                }
+            });
+
+            searchInput.addEventListener('input', function () {
+                if (this.value !== '') searchBox.classList.add('active');
+            });
+
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    const q = this.value.trim();
+                    if (q) {
+                        window.location.href = '@Url.Action("CuaHang", "EvolStore")?search=' + encodeURIComponent(q);
+                    }
+                }
+            });
+
+            @if (!string.IsNullOrEmpty(searchTerm))
+            {
+                <text>
+                document.getElementById('searchBox').classList.add('active');
+                document.getElementById('searchInput').focus();
+                </text>
+            }
+        }
+
+        // ===========================
+        // SELECTION HANDLERS
+        // ===========================
+        function initSelections() {
+            // Size selection
+            document.querySelectorAll('.size-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.size-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    selectedSize = this.getAttribute('data-size');
+                });
+            });
+
+            // Color selection
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.color-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    selectedColor = this.getAttribute('data-color');
+                });
+            });
+        }
+
+        // ===========================
+        // IMAGE HANDLING
+        // ===========================
+        function changeImage(thumbnail) {
+            document.getElementById('mainImage').src = thumbnail.src;
+            document.querySelectorAll('.thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            thumbnail.classList.add('active');
+        }
+
+        // ===========================
+        // QUANTITY HANDLING
+        // ===========================
+        function increaseQuantity() {
+            const input = document.getElementById('quantity');
+            const maxQuantity = @Model.SoLuongTon;
+            if (parseInt(input.value) < Math.min(10, maxQuantity)) {
+                input.value = parseInt(input.value) + 1;
+            }
+        }
+
+        function decreaseQuantity() {
+            const input = document.getElementById('quantity');
+            if (parseInt(input.value) > 1) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+
+        // ===========================
+        // RATING HANDLERS
+        // ===========================
+        function initRating() {
+            document.querySelectorAll('.star-input input').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    selectedRating = parseInt(this.value);
+                    updateStarDisplay();
+                });
+            });
+
+            // Initialize star display
+            updateStarDisplay();
+        }
+
+        function updateStarDisplay() {
+            const labels = document.querySelectorAll('.star-input label');
+            labels.forEach((label, index) => {
+                if (index < selectedRating) {
+                    label.style.color = '#ffc107';
+                } else {
+                    label.style.color = '#ddd';
+                }
+            });
+        }
+
+        function updateEditStarsDisplay(maDG, rating) {
+            const labels = document.querySelectorAll(`#edit-stars-${maDG} label`);
+            labels.forEach((label, index) => {
+                if (index < rating) {
+                    label.style.color = '#ffc107';
+                } else {
+                    label.style.color = '#ddd';
+                }
+            });
+        }
+
+        function checkLoginBeforeSubmit() {
+            var currentUrl = window.location.href;
+            window.location.href = '@Url.Action("Login", "User")?returnUrl=' + encodeURIComponent(currentUrl);
+        }
+
+        function submitRating() {
+            @if (Session["TenKhachHang"] == null)
+            {
+                <text>
+                checkLoginBeforeSubmit();
+                return;
+                </text>
+            }
+
+            const comment = document.getElementById('commentText').value.trim();
+
+            if (selectedRating === 0) {
+                showNotification('Vui lòng chọn số sao đánh giá!', 'error');
+                return;
+            }
+
+            if (comment === '') {
+                showNotification('Vui lòng nhập nội dung đánh giá!', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('maSP', @Model.MaSP);
+            formData.append('noiDung', comment);
+            formData.append('diem', selectedRating);
+
+            fetch('@Url.Action("ThemDanhGia", "EvolStore")', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    document.getElementById('commentText').value = '';
+                    document.querySelectorAll('.star-input input').forEach(radio => {
+                        radio.checked = false;
+                    });
+                    selectedRating = 0;
+                    updateStarDisplay();
+
+                    if (data.averageRating && data.totalReviews) {
+                        document.getElementById('averageRating').textContent = data.averageRating;
+                        document.querySelector('.rating-count').textContent = data.totalReviews + ' đánh giá';
+                        const averageStars = document.querySelectorAll('#averageStars .star');
+                        averageStars.forEach((star, index) => {
+                            if (index < Math.round(data.averageRating)) {
+                                star.classList.add('filled');
+                            } else {
+                                star.classList.remove('filled');
+                            }
+                        });
+                    }
+
+                    // Reload the page to show new review
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Có lỗi xảy ra khi gửi đánh giá!', 'error');
+            });
+        }
+
+        function deleteReview(maDG) {
+            if (!confirm('Bạn có chắc muốn xóa đánh giá này?')) {
+                return;
+            }
+
+            const reviewElement = document.getElementById(`review-${maDG}`);
+            reviewElement.style.opacity = '0.5';
+            reviewElement.style.pointerEvents = 'none';
+
+            fetch('@Url.Action("XoaDanhGia", "EvolStore")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `maDG=${maDG}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message);
+                    reviewElement.remove();
+
+                    // Update average rating
+                    if (data.averageRating && data.totalReviews) {
+                        document.getElementById('averageRating').textContent = data.averageRating;
+                        document.querySelector('.rating-count').textContent = data.totalReviews + ' đánh giá';
+                        const averageStars = document.querySelectorAll('#averageStars .star');
+                        averageStars.forEach((star, index) => {
+                            if (index < Math.round(data.averageRating)) {
+                                star.classList.add('filled');
+                            } else {
+                                star.classList.remove('filled');
+                            }
+                        });
+                    }
+
+                    // Show no reviews message if empty
+                    const ratingList = document.getElementById('ratingList');
+                    if (ratingList.children.length === 0) {
+                        ratingList.innerHTML = `
+                            <div class="no-reviews">
+                                <i class="fas fa-comments"></i>
+                                <h3>Chưa có đánh giá nào</h3>
+                                <p>Hãy là người đầu tiên đánh giá sản phẩm này!</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    showNotification(data.message, 'error');
+                    reviewElement.style.opacity = '1';
+                    reviewElement.style.pointerEvents = 'auto';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Có lỗi xảy ra khi xóa đánh giá!', 'error');
+                reviewElement.style.opacity = '1';
+                reviewElement.style.pointerEvents = 'auto';
+            });
+        }
+
+        function editReview(maDG, currentComment, currentRating) {
+            if (editingReviewId && editingReviewId !== maDG) {
+                cancelEdit(editingReviewId);
+            }
+
+            document.getElementById(`comment-${maDG}`).style.display = 'none';
+            document.getElementById(`stars-${maDG}`).style.display = 'none';
+            document.getElementById(`edit-form-${maDG}`).style.display = 'block';
+
+            document.getElementById(`edit-comment-${maDG}`).value = currentComment;
+            updateEditStarsDisplay(maDG, currentRating);
+
+            editingReviewId = maDG;
+        }
+
+        function saveEdit(maDG) {
+            const comment = document.getElementById(`edit-comment-${maDG}`).value.trim();
+            const ratingInput = document.querySelector(`#edit-form-${maDG} input[name="edit-rating-${maDG}"]:checked`);
+
+            if (!ratingInput) {
+                showNotification('Vui lòng chọn số sao đánh giá!', 'error');
+                return;
+            }
+
+            if (comment === '') {
+                showNotification('Vui lòng nhập nội dung đánh giá!', 'error');
+                return;
+            }
+
+            const selectedRating = parseInt(ratingInput.value);
+
+            const saveBtn = document.querySelector(`#edit-form-${maDG} .btn-save-edit`);
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG LƯU...';
+            saveBtn.disabled = true;
+
+            fetch('@Url.Action("SuaDanhGia", "EvolStore")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `maDG=${maDG}&noiDung=${encodeURIComponent(comment)}&diem=${selectedRating}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message);
+
+                    document.getElementById(`comment-${maDG}`).textContent = comment;
+                    document.getElementById(`comment-${maDG}`).style.display = 'block';
+
+                    const starsContainer = document.getElementById(`stars-${maDG}`);
+                    starsContainer.style.display = 'flex';
+                    const stars = starsContainer.querySelectorAll('.star');
+                    stars.forEach((star, index) => {
+                        if (index < selectedRating) {
+                            star.classList.add('filled');
+                        } else {
+                            star.classList.remove('filled');
+                        }
+                    });
+
+                    document.getElementById(`edit-form-${maDG}`).style.display = 'none';
+                    editingReviewId = null;
+
+                    if (data.averageRating && data.totalReviews) {
+                        document.getElementById('averageRating').textContent = data.averageRating;
+                        document.querySelector('.rating-count').textContent = data.totalReviews + ' đánh giá';
+                        const averageStars = document.querySelectorAll('#averageStars .star');
+                        averageStars.forEach((star, index) => {
+                            if (index < Math.round(data.averageRating)) {
+                                star.classList.add('filled');
+                            } else {
+                                star.classList.remove('filled');
+                            }
+                        });
+                    }
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Có lỗi xảy ra khi sửa đánh giá!', 'error');
+            })
+            .finally(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+        }
+
+        function cancelEdit(maDG) {
+            document.getElementById(`edit-form-${maDG}`).style.display = 'none';
+            document.getElementById(`comment-${maDG}`).style.display = 'block';
+            document.getElementById(`stars-${maDG}`).style.display = 'flex';
+            editingReviewId = null;
+        }
+
+        // ===========================
+        // CART FUNCTIONALITY
+        // ===========================
+        function addToCart() {
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const productId = @Model.MaSP;
+            const productName = '@Model.TenSP';
+            const price = @Model.Gia;
+            const originalPrice = @giaGoc;
+            const discountPercentage = @phanTramGiam;
+
+            const existingItemIndex = cart.findIndex(item =>
+                item.id === productId && item.size === selectedSize && item.color === selectedColor
+            );
+
+            if (existingItemIndex > -1) {
+                cart[existingItemIndex].quantity += quantity;
+            } else {
+                const newItem = {
+                    id: productId,
+                    name: productName,
+                    price: price,
+                    originalPrice: originalPrice,
+                    discountPercentage: discountPercentage,
+                    quantity: quantity,
+                    size: selectedSize,
+                    color: selectedColor,
+                    image: `/Images/${productId}a.jpg`
+                };
+                cart.push(newItem);
+            }
+
+            saveCart();
+            updateCartCount();
+            loadCartItems();
+            showNotification('Đã thêm vào giỏ hàng!');
+            openCart();
+        }
+
+        function buyNow() {
+            addToCart();
+            setTimeout(() => {
+                checkout();
+            }, 500);
+        }
+
+        function updateQuantity(productId, size, color, change) {
+            const itemIndex = cart.findIndex(item =>
+                item.id === productId && item.size === size && item.color === color
+            );
+
+            if (itemIndex > -1) {
+                cart[itemIndex].quantity += change;
+                if (cart[itemIndex].quantity <= 0) {
+                    cart.splice(itemIndex, 1);
+                }
+                saveCart();
+                updateCartCount();
+                loadCartItems();
+            }
+        }
+
+        function removeFromCart(productId, size, color) {
+            cart = cart.filter(item =>
+                !(item.id === productId && item.size === size && item.color === color)
+            );
+            saveCart();
+            updateCartCount();
+            loadCartItems();
+            showNotification('Đã xóa sản phẩm khỏi giỏ hàng');
+        }
+
+        function loadCartItems() {
+            const cartItemsContainer = document.getElementById('cartItems');
+            const cartSummary = document.getElementById('cartSummary');
+
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Giỏ hàng trống</h3>
+                        <p>Hãy thêm sản phẩm vào giỏ hàng của bạn</p>
+                    </div>
+                `;
+                cartSummary.style.display = 'none';
+                return;
+            }
+
+            let itemsHTML = '';
+            let subtotal = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                subtotal += itemTotal;
+
+                itemsHTML += `
+                    <div class="cart-item">
+                        <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+                        <div class="cart-item-details">
+                            <div class="cart-item-name">${item.name}</div>
+                            <div class="cart-item-variant">
+                                Size: ${item.size} | Color: ${item.color}
+                            </div>
+                            <div class="cart-item-price">${formatPrice(itemTotal)} ₫</div>
+                            <div class="cart-item-actions">
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity(${item.id}, '${item.size}', '${item.color}', -1)">-</button>
+                                    <input type="text" class="quantity-input" value="${item.quantity}" readonly>
+                                    <button class="quantity-btn" onclick="updateQuantity(${item.id}, '${item.size}', '${item.color}', 1)">+</button>
+                                </div>
+                                <button class="remove-item" onclick="removeFromCart(${item.id}, '${item.size}', '${item.color}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            cartItemsContainer.innerHTML = itemsHTML;
+            cartSummary.style.display = 'block';
+            const total = subtotal + 30000;
+            document.getElementById('subtotal').textContent = formatPrice(subtotal) + ' ₫';
+            document.getElementById('total').textContent = formatPrice(total) + ' ₫';
+        }
+
+        function saveCart() {
+            localStorage.setItem('evolstore_cart', JSON.stringify(cart));
+        }
+
+        function updateCartCount() {
+            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+            const cartCountElement = document.getElementById('cartCount');
+            if (cartCount > 0) {
+                cartCountElement.textContent = cartCount;
+                cartCountElement.style.display = 'flex';
+            } else {
+                cartCountElement.style.display = 'none';
+            }
+        }
+
+        // ===========================
+        // CART SIDEBAR
+        // ===========================
+        function openCart() {
+            document.getElementById('cartSidebar').classList.add('active');
+            document.getElementById('cartOverlay').classList.add('active');
+            loadCartItems();
+        }
+
+        function closeCart() {
+            document.getElementById('cartSidebar').classList.remove('active');
+            document.getElementById('cartOverlay').classList.remove('active');
+        }
+
+        // ===========================
+        // UTILITY FUNCTIONS
+        // ===========================
+        function formatPrice(price) {
+            return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function showNotification(message, type = 'success') {
+            const oldToast = document.querySelector('.toast');
+            if (oldToast) {
+                oldToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = type === 'error' ? 'toast error' : 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                alert('Giỏ hàng trống!');
+                return;
+            }
+            const cartData = encodeURIComponent(JSON.stringify(cart));
+            window.location.href = '@Url.Action("Index", "Checkout")?cartData=' + cartData;
+        }
+
+        // ===========================
+        // EVENT LISTENERS
+        // ===========================
+        document.getElementById('cartButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            openCart();
+        });
+
+        document.getElementById('cartOverlay').addEventListener('click', closeCart);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCart();
+            }
+        });
+
+        // Initialize edit star events
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.edit-stars input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const maDG = this.id.split('-')[2];
+                    const rating = parseInt(this.value);
+                    updateEditStarsDisplay(maDG, rating);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

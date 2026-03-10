@@ -1,0 +1,806 @@
+﻿@model List<CuoiKy.Models.RevenueDailyViewModel>
+@{
+    Layout = null;
+    // Lấy Vai trò từ Session và khai báo biến isAdmin
+    var userRole = Session["AdminRole"] as string;
+    var isNhanVienKho = userRole == "NhanVienKho";
+    var isAdmin = userRole == "Admin";
+    var isNhanVien = userRole == "NhanVien";
+    // Biến để gộp Admin và Nhân viên thường (những người có toàn quyền)
+    var isFullAccessNhanVien = isAdmin || isNhanVien;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doanh thu theo ngày - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .logo h2 {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            background: #34495e;
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-links a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* Alert */
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Filter Section */
+        .filter-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .filter-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 24px;
+            color: white;
+        }
+
+        .icon-revenue {
+            background: var(--success);
+        }
+        .icon-orders {
+            background: var(--primary);
+        }
+        .icon-customers {
+            background: var(--warning);
+        }
+        .icon-average {
+            background: #9b59b6;
+        }
+
+        .summary-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            height: 400px;
+        }
+
+        /* Table */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .text-success {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .text-primary {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .weekend {
+            background-color: #fff9e6;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .export-btn {
+            margin-left: 10px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .fa-spin {
+            animation: fa-spin 2s infinite linear;
+        }
+        /* Compact table styles */
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+            .table-container table {
+                font-size: 0.9rem;
+            }
+
+            .table-container th,
+            .table-container td {
+                padding: 10px 12px;
+            }
+
+            /* Scrollbar styling */
+            .table-container::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .table-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+            }
+
+            .table-container::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 3px;
+            }
+
+                .table-container::-webkit-scrollbar-thumb:hover {
+                    background: #a8a8a8;
+                }
+
+       
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Reports")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Reports" || ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Thống kê & Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("RevenueByDate")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Doanh thu theo ngày</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Orders")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Orders" || ViewContext.RouteData.Values["Action"].ToString() == "OrderDetails" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quản lý Đơn hàng</span>
+                    </a>
+                </li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" || ViewContext.RouteData.Values["Action"].ToString() == "AddProduct" || ViewContext.RouteData.Values["Action"].ToString() == "EditProduct" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Customers")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Customers" || ViewContext.RouteData.Values["Action"].ToString() == "AddCustomer" || ViewContext.RouteData.Values["Action"].ToString() == "EditCustomer" ? "active" : "")">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý Khách hàng</span>
+                    </a>
+                </li>
+            }
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+            @if (isAdmin)
+            {
+                <li>
+                    <a href="@Url.Action("Employees")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Employees" || ViewContext.RouteData.Values["Action"].ToString() == "AddEmployee" || ViewContext.RouteData.Values["Action"].ToString() == "EditEmployee" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Quản lý Nhân viên</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Accounts")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Accounts" || ViewContext.RouteData.Values["Action"].ToString() == "AddAccount" || ViewContext.RouteData.Values["Action"].ToString() == "EditAccount" ? "active" : "")">
+                        <i class="fas fa-user-lock"></i>
+                        <span>Quản lý Tài khoản</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Sales")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Sales" ? "active" : "")">
+                        <i class="fas fa-tags"></i>
+                        <span>Quản lý Giảm giá</span>
+                    </a>
+                </li>
+            }
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Doanh thu theo ngày</h1>
+            <div class="user-info">
+                <span>Xin chào, <strong>@Session["AdminUsername"]</strong></span>
+                <a href="@Url.Action("Logout")" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <!-- Filter Section -->
+        <div class="filter-container">
+            @using (Html.BeginForm("RevenueByDate", "Admin", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="filter-form">
+                    <div class="form-group">
+                        <label for="fromDate">Từ ngày</label>
+                        <input type="date" id="fromDate" name="fromDate" value="@ViewBag.StartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="toDate">Đến ngày</label>
+                        <input type="date" id="toDate" name="toDate" value="@ViewBag.EndDate" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Xem thống kê
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" id="exportBtn" class="btn btn-success export-btn">
+                            <i class="fas fa-download"></i> Xuất Excel
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-icon icon-revenue">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="summary-number text-success">
+                        @Model.Sum(x => x.TotalRevenue).ToString("N0") ₫
+                    </div>
+                    <div class="summary-label">Tổng doanh thu</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon icon-orders">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="summary-number text-primary">
+                        @Model.Sum(x => x.OrderCount)
+                    </div>
+                    <div class="summary-label">Tổng đơn hàng</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon icon-customers">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="summary-number">
+                        @Model.Sum(x => x.CustomerCount)
+                    </div>
+                    <div class="summary-label">Khách hàng</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon icon-average">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="summary-number">
+                        @{
+                            var totalOrders = Model.Sum(x => x.OrderCount);
+                            var avgValue = totalOrders > 0 ? Model.Sum(x => x.TotalRevenue) / totalOrders : 0;
+                        }
+                        @avgValue.ToString("N0") ₫
+                    </div>
+                    <div class="summary-label">Giá trị đơn trung bình</div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
+
+            <!-- Data Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3>Chi tiết doanh thu theo ngày</h3>
+            <span class="text-success">
+                @{
+                    var daysWithRevenue = Model.Where(x => x.TotalRevenue > 0).Count();
+                    <text>@daysWithRevenue ngày có doanh thu</text>
+            }
+        </span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>Thứ</th>
+                <th>Doanh thu</th>
+                <th>Số đơn</th>
+                <th>Khách hàng</th>
+                <th>Trung bình/đơn</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var revenueDays = Model.Where(x => x.TotalRevenue > 0).OrderByDescending(x => x.Date);
+            }
+            @foreach (var item in revenueDays)
+            {
+                <tr class="@(item.Date.DayOfWeek == DayOfWeek.Saturday || item.Date.DayOfWeek == DayOfWeek.Sunday ? "weekend" : "")">
+                    <td>@item.DateDisplay</td>
+                    <td>@item.DayOfWeekDisplay</td>
+                    <td class="text-success">@item.TotalRevenueDisplay</td>
+                    <td class="text-primary">@item.OrderCount</td>
+                    <td>@item.CustomerCount</td>
+                    <td>@item.AverageOrderValueDisplay</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr style="background-color: #f8f9fa; font-weight: 600;">
+                <td colspan="2">TỔNG CỘNG</td>
+                <td class="text-success">@Model.Sum(x => x.TotalRevenue).ToString("N0") ₫</td>
+                <td class="text-primary">@Model.Sum(x => x.OrderCount)</td>
+                <td>@Model.Sum(x => x.CustomerCount)</td>
+                <td>@avgValue.ToString("N0") ₫</td>
+            </tr>
+        </tfoot>
+    </table>
+    </div>
+        }
+        else
+        {
+            <div class="no-data">
+                <i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                <p>Không có dữ liệu doanh thu trong khoảng thời gian này</p>
+                <p style="font-size: 14px; color: #999; margin-top: 10px;">Vui lòng chọn khoảng thời gian khác</p>
+            </div>
+        }
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <i class="fas fa-spinner fa-spin fa-3x" style="color: #3498db; margin-bottom: 15px;"></i>
+            <p>Đang xuất file Excel...</p>
+            <p style="font-size: 14px; color: #666;">Vui lòng chờ trong giây lát</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+           @if (Model != null && Model.Any())
+{
+    <text>
+    // Lọc chỉ những ngày có doanh thu
+    var revenueData = [@Html.Raw(string.Join(", ", Model.Where(x => x.TotalRevenue > 0).Select(x => $"{{date: '{x.DateDisplay}', revenue: {x.TotalRevenue}, orders: {x.OrderCount}}}")))];
+
+    // Prepare chart data - chỉ lấy ngày có doanh thu
+    var dates = revenueData.map(x => x.date);
+    var revenues = revenueData.map(x => x.revenue);
+    var orders = revenueData.map(x => x.orders);
+
+    var ctx = document.getElementById('revenueChart').getContext('2d');
+    var revenueChart = new Chart(ctx, {
+        type: 'bar', // Đổi từ line sang bar cho dễ nhìn
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Doanh thu (VND)',
+                    data: revenues,
+                    backgroundColor: 'rgba(46, 204, 113, 0.8)',
+                    borderColor: '#27ae60',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Doanh thu (VND)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('vi-VN') + ' ₫';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Doanh thu: ' + context.parsed.y.toLocaleString('vi-VN') + ' ₫';
+                        }
+                    }
+                },
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+    </text>
+}
+
+            // Export button functionality
+document.getElementById('exportBtn').addEventListener('click', function() {
+    var fromDate = document.getElementById('fromDate').value;
+    var toDate = document.getElementById('toDate').value;
+
+    if (!fromDate || !toDate) {
+        alert('Vui lòng chọn khoảng thời gian!');
+        return;
+    }
+
+    if (new Date(fromDate) > new Date(toDate)) {
+        alert('Ngày bắt đầu không thể lớn hơn ngày kết thúc!');
+        return;
+    }
+
+    // Hiển thị loading
+    var loadingOverlay = document.getElementById('loadingOverlay');
+    var btn = this;
+    var originalText = btn.innerHTML;
+
+    loadingOverlay.style.display = 'flex';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xuất...';
+    btn.disabled = true;
+
+    // Lấy anti-forgery token từ form hiện có
+    var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+    // Tạo form tạm để submit
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '@Url.Action("ExportRevenue", "Admin")';
+
+    // Thêm anti-forgery token
+    var tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = '__RequestVerificationToken';
+    tokenInput.value = token;
+    form.appendChild(tokenInput);
+
+    var fromInput = document.createElement('input');
+    fromInput.type = 'hidden';
+    fromInput.name = 'fromDate';
+    fromInput.value = fromDate;
+    form.appendChild(fromInput);
+
+    var toInput = document.createElement('input');
+    toInput.type = 'hidden';
+    toInput.name = 'toDate';
+    toInput.value = toDate;
+    form.appendChild(toInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    // Ẩn loading sau 3 giây
+    setTimeout(function() {
+        loadingOverlay.style.display = 'none';
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 3000);
+});
+
+            // Set max date to today và min date cho toDate
+            var today = new Date().toISOString().split('T')[0];
+            document.getElementById('toDate').max = today;
+            document.getElementById('fromDate').max = today;
+
+            // Khi fromDate thay đổi, set min cho toDate
+            document.getElementById('fromDate').addEventListener('change', function() {
+                document.getElementById('toDate').min = this.value;
+            });
+
+            // Khi toDate thay đổi, set max cho fromDate
+            document.getElementById('toDate').addEventListener('change', function() {
+                document.getElementById('fromDate').max = this.value;
+            });
+        });
+    </script>
+</body>
+</html>

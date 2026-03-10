@@ -1,0 +1,513 @@
+﻿@* File: Views/Shared/_ChatSupport.cshtml *@
+
+<style>
+    /* Nút mở chat */
+    .chat-button {
+        position: fixed;
+        bottom: 25px;
+        right: 100px;
+        z-index: 999;
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 15px 30px;
+        box-shadow: 0 4px 20px rgba(39, 201, 204, 0.4);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+        .chat-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(39, 201, 204, 0.5);
+            padding: 15px 35px;
+        }
+
+        .chat-button i {
+            font-size: 1.4rem;
+        }
+
+    /* Popup chat */
+    .chat-popup {
+        display: none;
+        position: fixed;
+        bottom: 90px;
+        right: 25px;
+        z-index: 1001;
+        width: 450px;
+        height: 600px;
+        max-width: 90vw;
+        max-height: 80vh;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        overflow: hidden;
+        flex-direction: column;
+    }
+
+        .chat-popup.show {
+            display: flex;
+            animation: slideInUp 0.3s ease;
+        }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-header {
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        padding: 20px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+        .chat-header h5 {
+            margin: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .close-chat {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+
+        .close-chat:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+            width: 35px;
+            height: 35px;
+        }
+
+    .chat-status {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 8px;
+    }
+
+    .chat-body {
+        background: #fafafa;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #chatWindow {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: white;
+        min-height: 0;
+    }
+
+    .chat-input-area {
+        padding: 20px;
+        border-top: 1px solid #eee;
+        background: white;
+        flex-shrink: 0;
+    }
+
+    .user-info {
+        margin-top: 15px;
+        font-size: 0.9rem;
+    }
+
+    /* CSS cho tin nhắn - Giống UserChat.cshtml */
+    .message-left {
+        background: #f1f1f1;
+        padding: 8px 12px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        max-width: 70%;
+        float: left;
+        clear: both;
+    }
+
+    .message-right {
+        background: #007bff;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        max-width: 70%;
+        float: right;
+        clear: both;
+    }
+
+    .message-center {
+        background: #fff3cd;
+        color: #856404;
+        padding: 6px 10px;
+        border-radius: 5px;
+        margin: 8px auto;
+        text-align: center;
+        max-width: 80%;
+        clear: both;
+        font-size: 0.85em;
+    }
+
+    /* Scrollbar cho khung chat */
+    #chatWindow::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #chatWindow::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    #chatWindow::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 3px;
+    }
+
+    /* Overlay nền tối khi mở chat */
+    .chat-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 1000;
+        backdrop-filter: blur(3px);
+    }
+
+        .chat-overlay.show {
+            display: block;
+        }
+
+    /* Input và button */
+    #messageInput {
+        padding: 12px 15px;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+
+    #sendButton, #requestButton {
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+
+    #userName {
+        padding: 8px 12px;
+        font-size: 0.95rem;
+    }
+
+    #saveName {
+        padding: 8px 15px;
+        font-size: 0.95rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .chat-button {
+            right: 20px;
+            bottom: 20px;
+            padding: 12px 25px;
+            font-size: 1rem;
+        }
+
+        .chat-popup {
+            right: 50%;
+            transform: translateX(50%);
+            width: 380px;
+            height: 550px;
+            max-width: 95vw;
+            max-height: 85vh;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .chat-popup {
+            width: 95vw;
+            height: 85vh;
+            right: 2.5vw;
+            transform: none;
+            bottom: 10px;
+        }
+
+        .chat-button {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+        }
+    }
+</style>
+
+<!-- Nút mở chat -->
+<button class="chat-button" id="openChatBtn">
+    <i class="fas fa-comments"></i> <span>Chat hỗ trợ</span>
+</button>
+
+<!-- Overlay nền tối -->
+<div class="chat-overlay" id="chatOverlay"></div>
+
+<!-- Popup chat -->
+<div class="chat-popup" id="chatPopup">
+    <div class="chat-header">
+        <h5><i class="fas fa-headset"></i> Hỗ trợ trực tuyến</h5>
+        <button class="close-chat" id="closeChatBtn">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="chat-status">Trạng thái: <span id="statusText">Đang kết nối...</span></div>
+    </div>
+
+    <div class="chat-body">
+        <div id="chatWindow">
+            <div class="text-center text-muted pt-5">
+                <p>👋 Nhấn "Yêu cầu hỗ trợ" để bắt đầu</p>
+                <p class="small mt-2">Nhân viên sẽ hỗ trợ bạn trong thời gian sớm nhất</p>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="input-group">
+                <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn..." disabled>
+                <div class="input-group-append">
+                    <button id="sendButton" class="btn btn-primary" disabled>
+                        <i class="fas fa-paper-plane"></i> Gửi
+                    </button>
+                    <button id="requestButton" class="btn btn-success">
+                        <i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ
+                    </button>
+                </div>
+            </div>
+
+            <div class="user-info mt-2">
+                <div class="form-inline">
+                    <input type="text" id="userName" class="form-control form-control-sm mr-2"
+                           value="@(User.Identity.Name ?? "Khách")" placeholder="Tên của bạn">
+                    <button id="saveName" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-user-edit"></i> Đổi tên
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        console.log('Initializing chat popup...');
+
+        // Khai báo biến
+        var chat = $.connection.chatHub;
+        var chatPopup = $('#chatPopup');
+        var chatOverlay = $('#chatOverlay');
+        var isChatOpen = false;
+
+        // Mở popup chat
+        $('#openChatBtn').click(function () {
+            console.log('Opening chat popup...');
+            chatPopup.addClass('show');
+            chatOverlay.addClass('show');
+            isChatOpen = true;
+            $('body').css('overflow', 'hidden');
+
+            // Focus vào input nếu đã enable
+            if (!$('#messageInput').prop('disabled')) {
+                $('#messageInput').focus();
+            }
+        });
+
+        // Đóng popup chat
+        $('#closeChatBtn').click(closeChat);
+        chatOverlay.click(closeChat);
+
+        function closeChat() {
+            console.log('Closing chat popup...');
+            chatPopup.removeClass('show');
+            chatOverlay.removeClass('show');
+            isChatOpen = false;
+            $('body').css('overflow', 'auto');
+        }
+
+        // ESC để đóng chat
+        $(document).keydown(function (e) {
+            if (e.key === 'Escape' && isChatOpen) {
+                closeChat();
+            }
+        });
+
+        // Nhận tin nhắn từ nhân viên
+        chat.client.receiveMessage = function (sender, message) {
+            console.log('Received message from staff:', message);
+            addMessage(sender + ': ' + message, 'left');
+
+            // Nếu chat đang đóng, hiển thị thông báo
+            if (!isChatOpen) {
+                showNotification('💬 Có tin nhắn mới từ nhân viên');
+            }
+        };
+
+        // Nhận tin nhắn hệ thống
+        chat.client.receiveSystemMessage = function (message) {
+            console.log('Received system message:', message);
+            addSystemMessage(message);
+
+            if (message.includes("kết nối")) {
+                $('#messageInput').prop('disabled', false);
+                $('#sendButton').prop('disabled', false);
+                $('#requestButton').prop('disabled', true).html('<i class="fas fa-user-check"></i> Đã kết nối');
+
+                if (isChatOpen) {
+                    $('#messageInput').focus();
+                }
+
+                // Thông báo nếu chat đang đóng
+                if (!isChatOpen) {
+                    showNotification('✅ Nhân viên đã kết nối với bạn');
+                }
+
+            } else if (message.includes("đóng")) {
+                $('#messageInput').prop('disabled', true);
+                $('#sendButton').prop('disabled', true);
+                $('#requestButton').prop('disabled', false).html('<i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ');
+            }
+        };
+
+        // Hiển thị tin nhắn
+        function addMessage(content, side) {
+            var html = '<div class="message-' + side + '">' +
+                $('<div/>').text(content).html() +
+                '</div>';
+
+            // Xóa hướng dẫn ban đầu nếu có
+            var initialMessage = $('#chatWindow .text-center.text-muted');
+            if (initialMessage.length > 0) {
+                initialMessage.remove();
+            }
+
+            $('#chatWindow').append(html);
+            $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+        }
+
+        // Hiển thị tin nhắn hệ thống
+        function addSystemMessage(message) {
+            var html = '<div class="message-center">' +
+                $('<div/>').text(message).html() +
+                '</div>';
+
+            // Xóa hướng dẫn ban đầu nếu có
+            var initialMessage = $('#chatWindow .text-center.text-muted');
+            if (initialMessage.length > 0) {
+                initialMessage.remove();
+            }
+
+            $('#chatWindow').append(html);
+            $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+        }
+
+        // Hiển thị thông báo nhỏ
+        function showNotification(message) {
+            var notification = $('<div class="chat-notification">' + message + '</div>');
+            notification.css({
+                'position': 'fixed',
+                'top': '25px',
+                'right': '25px',
+                'background': 'linear-gradient(135deg, #27c9cc, #1a8a8c)',
+                'color': 'white',
+                'padding': '15px 20px',
+                'border-radius': '10px',
+                'z-index': '2000',
+                'box-shadow': '0 6px 20px rgba(0,0,0,0.25)',
+                'font-size': '1rem',
+                'font-weight': '500',
+                'max-width': '350px',
+                'backdrop-filter': 'blur(10px)',
+                'border': '1px solid rgba(255,255,255,0.2)'
+            });
+
+            $('body').append(notification);
+
+            // Tự động ẩn sau 5 giây
+            setTimeout(function () {
+                notification.fadeOut(300, function () {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+
+        // Kết nối SignalR
+        $.connection.hub.start().done(function () {
+            console.log('SignalR connected');
+            $('#statusText').text('Đã kết nối').css('color', '#4CAF50');
+
+            // Yêu cầu hỗ trợ
+            $('#requestButton').click(function () {
+                var name = $('#userName').val().trim();
+                if (!name) name = "Khách";
+
+                console.log('Requesting support for:', name);
+                chat.server.requestSupport(name);
+                addSystemMessage("🕒 Đang chờ nhân viên hỗ trợ...");
+
+                $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang chờ...');
+            });
+
+            // Gửi tin nhắn
+            $('#sendButton').click(function () {
+                var msg = $('#messageInput').val().trim();
+                if (!msg) return;
+
+                console.log('Sending message:', msg);
+                addMessage('Bạn: ' + msg, 'right');
+                chat.server.sendMessage(msg);
+                $('#messageInput').val('').focus();
+            });
+
+            // Enter để gửi
+            $('#messageInput').keypress(function (e) {
+                if (e.which === 13) {
+                    $('#sendButton').click();
+                }
+            });
+
+            // Đổi tên
+            $('#saveName').click(function () {
+                var newName = $('#userName').val().trim();
+                if (newName) {
+                    addSystemMessage("📝 Đổi tên thành: " + newName);
+                }
+            });
+
+        }).fail(function (err) {
+            console.error('SignalR connection failed:', err);
+            $('#statusText').text('Lỗi kết nối').css('color', '#F44336');
+        });
+    });
+</script>
+
+<script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+<script src="/signalr/hubs"></script>

@@ -1,0 +1,458 @@
+﻿@model CuoiKy.Models.KhachHang
+@{
+    Layout = null;
+    // Lấy Vai trò từ Session và khai báo biến isAdmin
+    var userRole = Session["AdminRole"] as string;
+    var isAdmin = userRole == "Admin";
+    var isNhanVien = userRole == "NhanVien";
+    var isNhanVienKho = userRole == "NhanVienKho";
+    // Biến để gộp Admin và Nhân viên thường (những người có toàn quyền)
+    var isFullAccessNhanVien = isAdmin || isNhanVien;
+    var orderHistory = Model.DonHangs.ToList();
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết Khách hàng - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* CSS tương tự OrderDetails, mình chỉ thay đổi phần cần thiết */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+            .logo h2 {
+                color: white;
+                font-size: 1.5rem;
+            }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 25px;
+                color: #bdc3c7;
+                text-decoration: none;
+                transition: all 0.3s;
+            }
+
+                .nav-links a i {
+                    margin-right: 10px;
+                    width: 20px;
+                    text-align: center;
+                }
+
+                .nav-links a:hover,
+                .nav-links a.active {
+                    background: #34495e;
+                    color: white;
+                    border-left: 4px solid var(--primary);
+                }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .customer-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .customer-info, .order-history {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-size: 1.2rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Order History */
+        .order-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+            .order-item:hover {
+                border-color: var(--primary);
+                background: #f8f9fa;
+            }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .order-id {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .order-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-shipping {
+            background: #cce7ff;
+            color: #004085;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .order-total {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .no-orders {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Reports")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Reports" || ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Thống kê & Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("RevenueByDate")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Doanh thu theo ngày</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Orders")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Orders" || ViewContext.RouteData.Values["Action"].ToString() == "OrderDetails" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quản lý Đơn hàng</span>
+                    </a>
+                </li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" || ViewContext.RouteData.Values["Action"].ToString() == "AddProduct" || ViewContext.RouteData.Values["Action"].ToString() == "EditProduct" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Customers")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Customers" || ViewContext.RouteData.Values["Action"].ToString() == "AddCustomer" || ViewContext.RouteData.Values["Action"].ToString() == "EditCustomer" ? "active" : "")">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý Khách hàng</span>
+                    </a>
+                </li>
+            }
+
+            @if (isAdmin)
+            {
+                <li>
+                    <a href="@Url.Action("Employees")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Employees" || ViewContext.RouteData.Values["Action"].ToString() == "AddEmployee" || ViewContext.RouteData.Values["Action"].ToString() == "EditEmployee" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Quản lý Nhân viên</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Accounts")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Accounts" || ViewContext.RouteData.Values["Action"].ToString() == "AddAccount" || ViewContext.RouteData.Values["Action"].ToString() == "EditAccount" ? "active" : "")">
+                        <i class="fas fa-user-lock"></i>
+                        <span>Quản lý Tài khoản</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Sales")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Sales" ? "active" : "")">
+                        <i class="fas fa-tags"></i>
+                        <span>Quản lý Giảm giá</span>
+                    </a>
+                </li>
+            }
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Chi tiết Khách hàng</h1>
+            <div class="user-info">
+                <a href="@Url.Action("Customers")" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+                <a href="@Url.Action("Logout")" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+
+        <div class="customer-container">
+            <!-- Thông tin khách hàng -->
+            <div class="customer-info">
+                <h3 class="section-title">Thông tin cá nhân</h3>
+                <div class="info-row">
+                    <span class="info-label">Mã KH:</span>
+                    <span class="info-value">#@Model.MaKH</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Họ tên:</span>
+                    <span class="info-value">@Model.HoTen</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">@Model.Email</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Điện thoại:</span>
+                    <span class="info-value">@Model.SoDienThoai</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Địa chỉ:</span>
+                    <span class="info-value">@Model.DiaChi</span>
+                </div>
+
+                <!-- Thống kê -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">@orderHistory.Count</div>
+                        <div class="stat-label">Tổng đơn hàng</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">@((ViewBag.TotalSpent ?? 0).ToString("N0")) ₫</div>
+                        <div class="stat-label">Tổng chi tiêu</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lịch sử mua hàng -->
+            <div class="order-history">
+                <h3 class="section-title">Lịch sử mua hàng</h3>
+
+                @if (orderHistory.Any())
+                {
+                    foreach (var order in orderHistory)
+                    {
+                        decimal orderTotal = 0;
+                        foreach (var item in order.ChiTietDonHangs)
+                        {
+                            orderTotal += (item.SoLuong ?? 0) * (item.DonGia ?? 0);
+                        }
+                        orderTotal += order.PhiGiaoHang ?? 0;
+
+                        var statusClass = "status-" + order.TrangThai.ToLower().Replace(" ", "");
+
+                        <div class="order-item">
+                            <div class="order-header">
+                                <div>
+                                    <span class="order-id">#@order.MaDH</span>
+                                    <span class="order-date"> - @(order.NgayDat?.ToString("dd/MM/yyyy") ?? "N/A")</span>
+                                </div>
+                                <span class="order-status @statusClass">@order.TrangThai</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    @foreach (var item in order.ChiTietDonHangs.Take(2))
+                                    {
+                                        <div style="font-size: 0.9rem; color: #666;">
+                                            @item.SanPham.TenSP (x@item.SoLuong)
+                                        </div>
+                                    }
+                                    @if (order.ChiTietDonHangs.Count > 2)
+                                    {
+                                        <div style="font-size: 0.8rem; color: #999;">
+                                            ...và @(order.ChiTietDonHangs.Count - 2) sản phẩm khác
+                                        </div>
+                                    }
+                                </div>
+                                <div class="order-total">@orderTotal.ToString("N0") ₫</div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-orders">
+                        <i class="fas fa-shopping-cart" style="font-size: 3rem; color: #ddd; margin-bottom: 15px;"></i>
+                        <p>Khách hàng chưa có đơn hàng nào</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</body>
+</html>

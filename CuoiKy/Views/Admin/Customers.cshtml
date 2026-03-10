@@ -1,0 +1,404 @@
+﻿﻿@model List<CuoiKy.Models.KhachHang>
+@{
+    Layout = null;
+    // Lấy Vai trò từ Session và khai báo biến isAdmin
+    var userRole = Session["AdminRole"] as string;
+    var isAdmin = userRole == "Admin";
+    var isNhanVienKho = userRole == "NhanVienKho";
+    var isNhanVien = userRole == "NhanVien";
+    // Biến để gộp Admin và Nhân viên thường (những người có toàn quyền)
+    var isFullAccessNhanVien = isAdmin || isNhanVien;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Khách hàng - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+            .logo h2 {
+                color: white;
+                font-size: 1.5rem;
+            }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 25px;
+                color: #bdc3c7;
+                text-decoration: none;
+                transition: all 0.3s;
+            }
+
+                .nav-links a i {
+                    margin-right: 10px;
+                    width: 20px;
+                    text-align: center;
+                }
+
+                .nav-links a:hover,
+                .nav-links a.active {
+                    background: #34495e;
+                    color: white;
+                    border-left: 4px solid var(--primary);
+                }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Table */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s;
+        }
+
+        .action-btn-primary {
+            background: var(--primary);
+        }
+
+        .action-btn-warning {
+            background: var(--warning);
+        }
+
+        .action-btn-danger {
+            background: var(--danger);
+        }
+
+        .action-btn:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+
+        /* Alert messages */
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Reports")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Reports" || ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Thống kê & Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("RevenueByDate")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Doanh thu theo ngày</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Orders")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Orders" || ViewContext.RouteData.Values["Action"].ToString() == "OrderDetails" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quản lý Đơn hàng</span>
+                    </a>
+                </li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" || ViewContext.RouteData.Values["Action"].ToString() == "AddProduct" || ViewContext.RouteData.Values["Action"].ToString() == "EditProduct" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Customers")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Customers" || ViewContext.RouteData.Values["Action"].ToString() == "AddCustomer" || ViewContext.RouteData.Values["Action"].ToString() == "EditCustomer" ? "active" : "")">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý Khách hàng</span>
+                    </a>
+                </li>
+            }
+
+            @if (isAdmin)
+            {
+                <li>
+                    <a href="@Url.Action("Employees")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Employees" || ViewContext.RouteData.Values["Action"].ToString() == "AddEmployee" || ViewContext.RouteData.Values["Action"].ToString() == "EditEmployee" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Quản lý Nhân viên</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Accounts")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Accounts" || ViewContext.RouteData.Values["Action"].ToString() == "AddAccount" || ViewContext.RouteData.Values["Action"].ToString() == "EditAccount" ? "active" : "")">
+                        <i class="fas fa-user-lock"></i>
+                        <span>Quản lý Tài khoản</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Sales")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Sales" ? "active" : "")">
+                        <i class="fas fa-tags"></i>
+                        <span>Quản lý Giảm giá</span>
+                    </a>
+                </li>
+            }
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Quản lý Khách hàng</h1>
+            <div class="user-info">
+                <span>Xin chào, <strong>@Session["AdminUsername"]</strong></span>
+                <a href="@Url.Action("Logout")" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+
+        <!-- Thông báo -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <div class="table-container">
+            <!-- PHẦN THÊM NÚT "THÊM KHÁCH HÀNG" VÀO ĐÂY -->
+            <div class="table-header">
+                <h3>Danh sách khách hàng (@Model.Count khách hàng)</h3>
+                <a href="@Url.Action("AddCustomer")" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Thêm khách hàng
+                </a>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã KH</th>
+                        <th>Họ tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Địa chỉ</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in Model)
+                    {
+                        <tr>
+                            <td>@customer.MaKH</td>
+                            <td>@customer.HoTen</td>
+                            <td>@customer.Email</td>
+                            <td>@customer.SoDienThoai</td>
+                            <td>@customer.DiaChi</td>
+                            <td class="actions">
+                                
+                                <a href="@Url.Action("EditCustomer", new { id = customer.MaKH })" class="action-btn action-btn-warning">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </a>
+                                <a href="@Url.Action("CustomerDetails", new { id = customer.MaKH })" class="action-btn action-btn-primary">
+                                    <i class="fas fa-eye"></i> Chi tiết
+                                </a>
+                                <a href="@Url.Action("DeleteCustomer", new { id = customer.MaKH })"
+                                   class="action-btn action-btn-danger"
+                                   onclick="return confirm('Bạn có chắc muốn xóa khách hàng @customer.HoTen?')">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

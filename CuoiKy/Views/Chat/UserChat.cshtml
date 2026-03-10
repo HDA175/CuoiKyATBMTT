@@ -1,0 +1,182 @@
+﻿@{
+    ViewBag.Title = "Chat hỗ trợ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">💬 Chat hỗ trợ</h5>
+                    <small>Trạng thái: <span id="statusText">Chưa kết nối</span></small>
+                </div>
+
+                <div class="card-body p-0">
+                    <!-- Khung chat -->
+                    <div id="chatWindow" style="height: 350px; overflow-y: auto; padding: 15px;">
+                        <div class="text-center text-muted pt-5">
+                            <p>👋 Nhấn "Yêu cầu hỗ trợ" để bắt đầu</p>
+                        </div>
+                    </div>
+
+                    <!-- Form nhập tin -->
+                    <div class="p-3 border-top">
+                        <div class="input-group mb-2">
+                            <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn..." disabled>
+                            <div class="input-group-append">
+                                <button id="sendButton" class="btn btn-primary" disabled>Gửi</button>
+                                <button id="requestButton" class="btn btn-success">Yêu cầu hỗ trợ</button>
+                            </div>
+                        </div>
+
+                        @*<div class="form-inline">
+                            <input type="text" id="userName" class="form-control form-control-sm mr-2"
+                                   value="@(User.Identity.Name ?? "Khách")" placeholder="Tên của bạn">
+                            <button id="saveName" class="btn btn-sm btn-outline-secondary">Đổi tên</button>
+                        </div>*@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+    <script src="/signalr/hubs"></script>
+
+    <script>
+        $(function () {
+            var chat = $.connection.chatHub;
+            var isConnected = false;
+
+            // Nhận tin nhắn từ nhân viên
+            chat.client.receiveMessage = function (sender, message) {
+                addMessage(sender + ': ' + message, 'left');
+            };
+
+            // Nhận tin nhắn từ user (dành cho nhân viên)
+            chat.client.receiveUserMessage = function (userName, message) {
+                // Chỉ nhân viên nhận, user không cần xử lý
+            };
+
+            // Nhận tin nhắn hệ thống
+            chat.client.receiveSystemMessage = function (message) {
+                addSystemMessage(message);
+                if (message.includes("kết nối")) {
+                    $('#messageInput').prop('disabled', false);
+                    $('#sendButton').prop('disabled', false);
+                    $('#requestButton').prop('disabled', true).text('Yêu cầu hỗ trợ');
+                    $('#messageInput').focus();
+                } else if (message.includes("đóng")) {
+                    $('#messageInput').prop('disabled', true);
+                    $('#sendButton').prop('disabled', true);
+                    $('#requestButton').prop('disabled', false);
+                }
+            };
+
+            // Hiển thị tin nhắn
+            function addMessage(content, side) {
+                var html = '<div class="message-' + side + '">' +
+                    $('<div/>').text(content).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            // Hiển thị tin nhắn hệ thống
+            function addSystemMessage(message) {
+                var html = '<div class="message-center">' +
+                    $('<div/>').text(message).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            // Kết nối hub
+            $.connection.hub.start().done(function () {
+                isConnected = true;
+                $('#statusText').text('Đã kết nối').css('color', 'green');
+
+                // Yêu cầu hỗ trợ (không cần truyền tên)
+                $('#requestButton').click(function () {
+                    chat.server.requestSupport();
+                    addSystemMessage("Đang chờ nhân viên...");
+                    $(this).prop('disabled', true).text('Đang chờ...');
+                });
+
+                // Gửi tin nhắn
+                $('#sendButton').click(function () {
+                    var msg = $('#messageInput').val().trim();
+                    if (!msg) return;
+
+                    addMessage('Bạn: ' + msg, 'right');
+                    chat.server.sendMessage(msg);
+                    $('#messageInput').val('').focus();
+                });
+
+                // Enter để gửi
+                $('#messageInput').keypress(function (e) {
+                    if (e.which === 13) $('#sendButton').click();
+                });
+
+            }).fail(function (err) {
+                $('#statusText').text('Lỗi kết nối').css('color', 'red');
+                console.error(err);
+            });
+        });
+    </script>
+
+    <style>
+        .message-left {
+            background: #f1f1f1;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            max-width: 70%;
+            float: left;
+            clear: both;
+        }
+
+        .message-right {
+            background: #007bff;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            max-width: 70%;
+            float: right;
+            clear: both;
+        }
+
+        .message-center {
+            background: #fff3cd;
+            color: #856404;
+            padding: 6px 10px;
+            border-radius: 5px;
+            margin: 8px auto;
+            text-align: center;
+            max-width: 80%;
+            clear: both;
+            font-size: 0.85em;
+        }
+
+        #chatWindow {
+            background: #fafafa;
+        }
+
+            #chatWindow::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            #chatWindow::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+
+            #chatWindow::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 3px;
+            }
+    </style>
+}

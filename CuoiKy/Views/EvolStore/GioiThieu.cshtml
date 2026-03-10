@@ -1,0 +1,106 @@
+﻿
+@{
+    ViewBag.Title = "GioiThieu";
+}
+<style>
+    nav > p {
+        font-size: 40px;
+        text-align: center;
+        margin: 40px auto;
+    }
+
+    hr {
+        width: 90%;
+        margin: 10px auto;
+        border: 3px solid black;
+    }
+
+    .gioithieu {
+        width: 100%;
+        display: flex;
+        margin: 30px auto;
+        gap: 80px;
+    }
+
+    .slogan {
+        width: 40%;
+    }
+
+        .slogan > h4 {
+            color: rgb(39, 201, 204);
+            font-size: 45px;
+            margin-top: 80px;
+        }
+
+        .slogan > h2 {
+            font-size: 30px;
+            margin: 15px;
+        }
+
+        .slogan > p {
+            font-size: 20px;
+            margin: 15px;
+        }
+
+        .slogan > h5 {
+            font-size: 27px;
+            margin-top: 50px;
+        }
+
+    .anh {
+        width: 55%;
+    }
+
+        .anh > img {
+            height: 550px;
+            width: 100%;
+        }
+    .to-top {
+        width: 55px;
+        height: 55px;
+        background-color: rgba(0,0,0,0.7);
+        line-height: 55px;
+        text-align: center;
+        border-radius: 8px;
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+        .to-top:hover {
+            background-color: rgb(39, 201, 204);
+            transform: translateY(-4px);
+        }
+
+        .to-top > a {
+            text-decoration: none;
+            color: white;
+            display: block;
+            font-size: 22px;
+        }
+</style>
+<nav>
+    <p>"Thời Trang Là Cách Nói Lên Bạn Là Ai Mà Không Cần Tốn Lấy Một Lời"</p>
+    <h2>Giới thiệu</h2>
+</nav>
+<hr />
+<div class="gioithieu">
+    <div class="slogan">
+        <h4>GIÚP BẠN TRỞ NÊN ĐẸP HƠN</h4>
+        <h2>Mục tiêu chính</h2>
+        <p>
+            Nhằm tạo ra một nơi để khách hàng mua sắm các sản phẩm thời trang mới,
+            đẹp và chất lượng với những ưu đãi, giảm giá đến bất ngờ.
+        </p>
+        <h5>"Thời trang là nhất thời, phong cách là mãi mãi..."</h5>
+    </div>
+    <div class="anh">
+        <img src="/images/bg3.jpg" alt="bg3" />
+    </div>
+</div>
+<div class="to-top">
+    <a href="#top"><i class="fa-solid fa-arrow-up"></i></a>
+</div>
+

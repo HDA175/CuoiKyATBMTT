@@ -1,0 +1,104 @@
+﻿@{
+    ViewBag.Title = "Kết quả thanh toán";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header @(ViewBag.Success == true ? "bg-success" : "bg-danger") text-white">
+                    <h4 class="mb-0">
+                        @if (ViewBag.Success == true)
+                        {
+                            <text>✅ Thanh toán thành công</text>
+                        }
+                        else
+                        {
+                            <text>❌ Thanh toán thất bại</text>
+                        }
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Success == true)
+                    {
+                        <div class="text-center text-success mb-4">
+                            <i class="fas fa-check-circle" style="font-size: 4rem;"></i>
+                            <h3 class="mt-3">@ViewBag.Message</h3>
+                        </div>
+
+                        <div class="alert alert-light">
+                            <h5>📊 Thông tin giao dịch:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Mã đơn hàng:</strong></p>
+                                    <p><strong>Số tiền:</strong></p>
+                                    <p><strong>Nội dung:</strong></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>@ViewBag.OrderId</p>
+                                    <p>@String.Format("{0:n0}", ViewBag.Amount) VND</p>
+                                    <p>@ViewBag.OrderInfo</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <p><strong>Mã giao dịch VNPay:</strong> @ViewBag.TransactionNo</p>
+                            <p><strong>Thời gian:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-danger mb-4">
+                            <i class="fas fa-times-circle" style="font-size: 4rem;"></i>
+                            <h3 class="mt-3">@ViewBag.Message</h3>
+                        </div>
+
+                        if (ViewBag.OrderId != null)
+                        {
+                            <div class="alert alert-warning">
+                                <p><strong>Mã đơn hàng:</strong> @ViewBag.OrderId</p>
+                                <p>Vui lòng thử lại hoặc liên hệ hỗ trợ nếu vấn đề tiếp diễn.</p>
+                            </div>
+                        }
+                    }
+
+                    <div class="text-center mt-4">
+                        <a href="@Url.Action("Payment", "VNPay")" class="btn btn-primary btn-lg mr-3">
+                            🔄 Thử lại
+                        </a>
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary btn-lg">
+                            🏠 Về trang chủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+
+    .alert-light {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .btn-outline-secondary {
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+</style>

@@ -1,0 +1,866 @@
+﻿﻿@{
+    ViewBag.Title = "Liên Hệ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* CSS cho phần chính */
+    nav > p {
+        font-size: 40px;
+        text-align: center;
+        margin: 40px auto;
+        font-style: italic;
+        color: #333;
+    }
+
+    h2 {
+        text-align: center;
+        margin: 20px 0;
+        font-size: 36px;
+        color: #27c9cc;
+    }
+
+    hr {
+        width: 80%;
+        margin: 20px auto;
+        border: 2px solid #27c9cc;
+    }
+
+    .gioithieu {
+        width: 100%;
+        display: flex;
+        margin: 40px auto;
+        gap: 60px;
+        padding: 0 20px;
+        max-width: 1200px;
+    }
+
+    .slogan {
+        width: 45%;
+        padding: 20px;
+    }
+
+        .slogan > h4 {
+            color: rgb(39, 201, 204);
+            font-size: 38px;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        .slogan > h2 {
+            font-size: 24px;
+            margin: 20px 0 10px 0;
+            color: #333;
+        }
+
+        .slogan > p {
+            font-size: 18px;
+            margin: 5px 0 20px 15px;
+            color: #555;
+        }
+
+        .slogan > .address {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #27c9cc;
+        }
+
+    .anh {
+        width: 55%;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+        .anh > img {
+            width: 100%;
+            height: 550px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .anh:hover > img {
+            transform: scale(1.03);
+        }
+
+    /* Nút quay về đầu trang */
+    .to-top {
+        width: 55px;
+        height: 55px;
+        background-color: rgba(39, 201, 204, 0.9);
+        line-height: 55px;
+        text-align: center;
+        border-radius: 50%;
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        transition: all 0.3s ease;
+        z-index: 999;
+        border: 2px solid white;
+        box-shadow: 0 4px 15px rgba(39, 201, 204, 0.3);
+    }
+
+        .to-top:hover {
+            background-color: #1a8a8c;
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(39, 201, 204, 0.5);
+        }
+
+        .to-top > a {
+            text-decoration: none;
+            color: white;
+            display: block;
+            font-size: 22px;
+        }
+
+    /* Nút mở chat */
+    .chat-button {
+        position: fixed;
+        bottom: 25px;
+        right: 100px;
+        z-index: 1000;
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 15px 30px;
+        box-shadow: 0 4px 20px rgba(39, 201, 204, 0.4);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+        .chat-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(39, 201, 204, 0.5);
+            padding: 15px 35px;
+        }
+
+        .chat-button i {
+            font-size: 1.4rem;
+        }
+
+    /* Popup chat */
+    .chat-popup {
+        display: none;
+        position: fixed;
+        bottom: 90px;
+        right: 25px;
+        z-index: 1001;
+        width: 450px;
+        height: 600px;
+        max-width: 90vw;
+        max-height: 80vh;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        overflow: hidden;
+        animation: slideInUp 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-header {
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        padding: 20px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+        .chat-header h5 {
+            margin: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .close-chat {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+
+        .close-chat:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+            width: 35px;
+            height: 35px;
+        }
+
+    .chat-status {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 8px;
+    }
+
+    .chat-body {
+        background: #fafafa;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #chatWindow {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: white;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-input-area {
+        padding: 20px;
+        border-top: 1px solid #eee;
+        background: white;
+        flex-shrink: 0;
+    }
+
+    /* Tin nhắn */
+    .message-left {
+        background: #f1f1f1;
+        padding: 12px 16px;
+        border-radius: 18px 18px 18px 4px;
+        margin-bottom: 12px;
+        max-width: 85%;
+        align-self: flex-start;
+        font-size: 1rem;
+        line-height: 1.4;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        word-wrap: break-word;
+    }
+
+    .message-right {
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 18px 18px 4px 18px;
+        margin-bottom: 12px;
+        max-width: 85%;
+        align-self: flex-end;
+        font-size: 1rem;
+        line-height: 1.4;
+        box-shadow: 0 2px 8px rgba(39, 201, 204, 0.2);
+        word-wrap: break-word;
+    }
+
+    .message-center {
+        background: #fff3cd;
+        color: #856404;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin: 10px auto;
+        text-align: center;
+        max-width: 90%;
+        font-size: 0.9rem;
+        border: 1px solid #ffeaa7;
+        clear: both;
+    }
+
+    /* Đề xuất câu hỏi */
+    .suggestions-container {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 15px;
+        margin: 15px 10px;
+        border: 1px solid #e9ecef;
+        display: block;
+    }
+
+    .suggestions-title {
+        font-weight: 600;
+        color: #27c9cc;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+        text-align: center;
+    }
+
+    .suggestions-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .suggestion-btn {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px 15px;
+        text-align: left;
+        font-size: 0.85rem;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+        .suggestion-btn:hover {
+            background: #27c9cc;
+            color: white;
+            border-color: #27c9cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(39, 201, 204, 0.2);
+        }
+
+        .suggestion-btn i {
+            font-size: 0.9rem;
+            min-width: 20px;
+        }
+
+    /* Scrollbar */
+    #chatWindow::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #chatWindow::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    #chatWindow::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+    }
+
+        #chatWindow::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+    /* Overlay */
+    .chat-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 1000;
+        backdrop-filter: blur(3px);
+    }
+
+    /* Form input */
+    #messageInput {
+        padding: 12px 15px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        transition: border 0.3s;
+    }
+
+        #messageInput:focus {
+            border-color: #27c9cc;
+            box-shadow: 0 0 0 0.2rem rgba(39, 201, 204, 0.25);
+        }
+
+    #sendButton, #requestButton {
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    /* Thông báo */
+    .notification {
+        position: fixed;
+        top: 25px;
+        right: 25px;
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 2000;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        animation: fadeInOut 5s;
+        font-size: 1rem;
+        font-weight: 500;
+        max-width: 350px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    @@keyframes fadeInOut {
+        0% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+
+        15% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        85% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+    }
+
+    /* Nút */
+    .btn-primary {
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        border: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        border: none;
+    }
+
+        .btn-primary:hover, .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+    /* Loading */
+    .fa-spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .gioithieu {
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .slogan, .anh {
+            width: 100%;
+        }
+
+            .slogan > h4 {
+                font-size: 32px;
+                margin-top: 0;
+            }
+
+            .anh > img {
+                height: 400px;
+            }
+    }
+
+    @@media (max-width: 768px) {
+        nav > p {
+            font-size: 28px;
+            margin: 30px 20px;
+        }
+
+        h2 {
+            font-size: 28px;
+        }
+
+        .slogan > h4 {
+            font-size: 28px;
+        }
+
+        .slogan > h2 {
+            font-size: 22px;
+        }
+
+        .slogan > p {
+            font-size: 16px;
+        }
+
+        .suggestions-list {
+            grid-template-columns: 1fr;
+        }
+
+        .chat-button {
+            right: 20px;
+            bottom: 20px;
+            padding: 12px 25px;
+            font-size: 1rem;
+        }
+
+        .chat-popup {
+            right: 50%;
+            transform: translateX(50%);
+            width: 380px;
+            height: 550px;
+            max-width: 95vw;
+            max-height: 85vh;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .chat-popup {
+            width: 95vw;
+            height: 85vh;
+            right: 2.5vw;
+            transform: none;
+            bottom: 10px;
+        }
+
+        .chat-button {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            right: 15px;
+        }
+
+        .to-top {
+            width: 45px;
+            height: 45px;
+            line-height: 45px;
+            bottom: 15px;
+            right: 15px;
+        }
+
+        .slogan > .address {
+            padding: 15px;
+            font-size: 14px;
+        }
+    }
+</style>
+
+<nav>
+    <p>"Thời Trang Là Cách Nói Lên Bạn Là Ai Mà Không Cần Tốn Lấy Một Lời"</p>
+    <h2>Liên hệ</h2>
+</nav>
+<hr />
+
+<div class="gioithieu">
+    <div class="slogan">
+        <h4>CONTACT US</h4>
+        <h2>📞 Hotline:</h2>
+        <p>• 0559 908 979 (Hỗ trợ 24/7)</p>
+        <p>• 0793 826 001 (Tư vấn mua hàng)</p>
+
+        <h2>📱 Instagram:</h2>
+        <p>@@evolstore</p>
+
+        <h2>👥 Facebook:</h2>
+        <p>fb.com/evolstore</p>
+
+        <h2>📧 Email:</h2>
+        <p>support@evolstore.com</p>
+
+        <div class="address">
+            <h3 style="color: #27c9cc; margin-top: 0;">🏬 Hệ thống cửa hàng:</h3>
+            <p><strong>Store I:</strong> 445 Sư Vạn Hạnh, P.12, Q.10, TP.HCM</p>
+            <p><strong>Store II:</strong> 48 Trần Quang Diệu, P.14, Q.3, TP.HCM</p>
+            <p><strong>Giờ mở cửa:</strong> 8:30 - 21:30 (Thứ 2 - Chủ nhật)</p>
+        </div>
+    </div>
+
+    <div class="anh">
+        <img src="/images/bg2.jpg" alt="Cửa hàng EVOL Store" />
+    </div>
+</div>
+
+<!-- Nút mở chat -->
+<button class="chat-button" id="openChatBtn">
+    <i class="fas fa-comments"></i> <span>Chat hỗ trợ</span>
+</button>
+
+<!-- Overlay nền tối -->
+<div class="chat-overlay" id="chatOverlay"></div>
+
+<!-- Popup chat -->
+<div class="chat-popup" id="chatPopup">
+    <div class="chat-header">
+        <h5><i class="fas fa-headset"></i> Hỗ trợ trực tuyến</h5>
+        <button class="close-chat" id="closeChatBtn">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="chat-status">Trạng thái: <span id="statusText">Chưa kết nối</span></div>
+    </div>
+
+    <div class="chat-body">
+        <div id="chatWindow">
+            <div class="text-center text-muted pt-5">
+                <p style="font-size: 1.1rem; margin-bottom: 5px;">👋 Chào mừng đến với EVOL Store!</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">Nhấn "Yêu cầu hỗ trợ" để kết nối với nhân viên</p>
+            </div>
+
+            <!-- Phần đề xuất câu hỏi -->
+            <div id="suggestionsBox" class="suggestions-container">
+                <p class="suggestions-title">💡 Bạn có thể hỏi:</p>
+                <div class="suggestions-list">
+                    <button class="suggestion-btn" data-question="Giờ mở cửa của cửa hàng?">
+                        <i class="far fa-clock"></i> Giờ mở cửa?
+                    </button>
+                    <button class="suggestion-btn" data-question="Có chương trình khuyến mãi nào không?">
+                        <i class="fas fa-gift"></i> Khuyến mãi?
+                    </button>
+                    <button class="suggestion-btn" data-question="Có ship hàng toàn quốc không?">
+                        <i class="fas fa-shipping-fast"></i> Giao hàng?
+                    </button>
+                    <button class="suggestion-btn" data-question="Tôi muốn đổi trả sản phẩm">
+                        <i class="fas fa-exchange-alt"></i> Đổi trả?
+                    </button>
+                    <button class="suggestion-btn" data-question="Có cửa hàng ở Hà Nội không?">
+                        <i class="fas fa-store"></i> Địa chỉ?
+                    </button>
+                    <button class="suggestion-btn" data-question="Tôi muốn xem bộ sưu tập mới">
+                        <i class="fas fa-tshirt"></i> Sản phẩm mới?
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="input-group">
+                <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn của bạn..." disabled>
+                <div class="input-group-append">
+                    <button id="sendButton" class="btn btn-primary" disabled>
+                        <i class="fas fa-paper-plane"></i> Gửi
+                    </button>
+                    <button id="requestButton" class="btn btn-success">
+                        <i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="to-top">
+    <a href="#top"><i class="fa-solid fa-arrow-up"></i></a>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+    <script src="/signalr/hubs"></script>
+
+    <script>
+        $(function () {
+            var chat = $.connection.chatHub;
+            var isConnected = false;
+            var isChatOpen = false;
+            var pendingQuestion = null;
+
+            // Mở popup chat
+            $('#openChatBtn').click(openChat);
+
+            // Đóng popup chat
+            $('#closeChatBtn').click(closeChat);
+            $('#chatOverlay').click(closeChat);
+
+            // Đóng khi nhấn ESC
+            $(document).keydown(function (e) {
+                if (e.keyCode === 27 && isChatOpen) {
+                    closeChat();
+                }
+            });
+
+            function openChat() {
+                $('#chatPopup').show();
+                $('#chatOverlay').show();
+                isChatOpen = true;
+                $('body').css('overflow', 'hidden');
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+
+                if (!$('#messageInput').prop('disabled')) {
+                    $('#messageInput').focus();
+                }
+            }
+
+            function closeChat() {
+                $('#chatPopup').hide();
+                $('#chatOverlay').hide();
+                isChatOpen = false;
+                $('body').css('overflow', 'auto');
+            }
+
+            // Hiển thị thông báo
+            function showNotification(message) {
+                var notification = $('<div class="notification">' + message + '</div>');
+                $('body').append(notification);
+
+                setTimeout(function () {
+                    notification.fadeOut(300, function () {
+                        $(this).remove();
+                    });
+                }, 5000);
+            }
+
+            // Thêm tin nhắn vào khung chat
+            function addMessage(content, side) {
+                var messageClass = side === 'left' ? 'message-left' : 'message-right';
+                var html = '<div class="' + messageClass + '">' +
+                    $('<div/>').text(content).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            // Thêm tin nhắn hệ thống
+            function addSystemMessage(message) {
+                var html = '<div class="message-center">' +
+                    $('<div/>').text(message).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            // Hiển thị/ẩn đề xuất
+            function toggleSuggestions(show) {
+                if (show) {
+                    $('#suggestionsBox').show();
+                } else {
+                    $('#suggestionsBox').hide();
+                }
+            }
+
+            // Xử lý khi click vào câu đề xuất
+            $(document).on('click', '.suggestion-btn', function () {
+                var question = $(this).data('question');
+
+                if ($('#messageInput').prop('disabled')) {
+                    // Chưa kết nối, yêu cầu hỗ trợ trước
+                    pendingQuestion = question;
+                    chat.server.requestSupport();
+                    $('#requestButton').prop('disabled', true)
+                        .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ...');
+                } else {
+                    // Đã kết nối, gửi ngay
+                    sendMessage(question);
+                }
+            });
+
+            // Gửi tin nhắn
+            function sendMessage(message) {
+                if (!message.trim()) return;
+
+                addMessage('Bạn: ' + message, 'right');
+                chat.server.sendMessage(message);
+                $('#messageInput').val('').focus();
+            }
+
+            // Nhận tin nhắn từ server
+            chat.client.receiveMessage = function (sender, message) {
+                addMessage(sender + ': ' + message, 'left');
+                if (!isChatOpen) {
+                    showNotification('💬 Có tin nhắn mới từ nhân viên');
+                }
+            };
+
+            chat.client.receiveSystemMessage = function (message) {
+                addSystemMessage(message);
+
+                if (message.includes("kết nối")) {
+                    // Đã kết nối với nhân viên
+                    $('#messageInput').prop('disabled', false);
+                    $('#sendButton').prop('disabled', false);
+                    $('#requestButton').prop('disabled', true)
+                        .html('<i class="fas fa-user-check"></i> Đã kết nối');
+                    toggleSuggestions(false);
+
+                    // Gửi câu hỏi đang chờ
+                    if (pendingQuestion) {
+                        setTimeout(function () {
+                            sendMessage(pendingQuestion);
+                            pendingQuestion = null;
+                        }, 1000);
+                    }
+
+                    if (isChatOpen) {
+                        $('#messageInput').focus();
+                    }
+
+                    if (!isChatOpen) {
+                        showNotification('✅ Nhân viên đã kết nối với bạn');
+                    }
+                } else if (message.includes("đóng")) {
+                    // Kết thúc chat
+                    $('#messageInput').prop('disabled', true);
+                    $('#sendButton').prop('disabled', true);
+                    $('#requestButton').prop('disabled', false)
+                        .html('<i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ');
+                    toggleSuggestions(true);
+                    pendingQuestion = null;
+                }
+            };
+
+            // Kết nối SignalR
+            $.connection.hub.start().done(function () {
+                isConnected = true;
+                $('#statusText').text('Đã kết nối máy chủ').css('color', '#4CAF50');
+
+                // Xử lý yêu cầu hỗ trợ
+                $('#requestButton').click(function () {
+                    chat.server.requestSupport();
+                    addSystemMessage("🕒 Đang kết nối với nhân viên hỗ trợ...");
+                    $(this).prop('disabled', true)
+                        .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ...');
+                });
+
+                // Xử lý gửi tin nhắn
+                $('#sendButton').click(function () {
+                    var msg = $('#messageInput').val().trim();
+                    sendMessage(msg);
+                });
+
+                // Enter để gửi
+                $('#messageInput').keypress(function (e) {
+                    if (e.which === 13) {
+                        $('#sendButton').click();
+                    }
+                });
+
+                // Hiển thị đề xuất ban đầu
+                toggleSuggestions(true);
+
+            }).fail(function (err) {
+                console.error('Kết nối thất bại:', err);
+                $('#statusText').text('Lỗi kết nối').css('color', '#F44336');
+                addSystemMessage("❌ Không thể kết nối đến máy chủ chat");
+            });
+        });
+    </script>
+}

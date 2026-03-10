@@ -1,0 +1,382 @@
+﻿@model CuoiKy.Models.DonHang
+@{
+    ViewBag.Title = "Chi Tiết Đơn Hàng #" + Model.MaDH;
+    Layout = null;
+    var nguoiNhan = Model.NguoiNhans?.FirstOrDefault();
+    var thanhToan = Model.ThanhToans?.FirstOrDefault();
+    var chiTietDonHangs = Model.ChiTietDonHangs?.ToList() ?? new List<CuoiKy.Models.ChiTietDonHang>();
+    var tongTienSanPham = chiTietDonHangs.Sum(ct => ct.SoLuong * ct.DonGia);
+    var tongTienDonHang = (tongTienSanPham + (Model.PhiGiaoHang ?? 0));
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Giữ nguyên toàn bộ CSS từ file cũ */
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            transition: var(--transition);
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #1e4a8a);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+            padding: 1.5rem;
+            border-bottom: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        /* ... (giữ nguyên toàn bộ CSS khác) ... */
+    </style>
+</head>
+<body>
+    <div class="main-container fade-in">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-file-invoice"></i> @ViewBag.Title</h4>
+                <span class="badge @GetStatusBadgeClass(Model.TrangThai)">
+                    <span class="status-indicator"></span>
+                    @Model.TrangThai
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- Thông báo -->
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <div class="row">
+                    <!-- Thông tin đơn hàng -->
+                    <div class="col-md-6 mb-4">
+                        <div class="info-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Thông tin đơn hàng</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">Mã đơn hàng:</div>
+                                    <div class="col-sm-8">
+                                        <span class="badge bg-primary">#@Model.MaDH</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">Khách hàng:</div>
+                                    <div class="col-sm-8">@(Model.KhachHang?.HoTen ?? "N/A")</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">Email:</div>
+                                    <div class="col-sm-8">@(Model.KhachHang?.Email ?? "N/A")</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">SĐT:</div>
+                                    <div class="col-sm-8">@(Model.KhachHang?.SoDienThoai ?? "N/A")</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">Địa chỉ:</div>
+                                    <div class="col-sm-8">@(Model.KhachHang?.DiaChi ?? "N/A")</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">Ngày đặt:</div>
+                                    <div class="col-sm-8">@string.Format("{0:dd/MM/yyyy}", Model.NgayDat)</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">Trạng thái:</div>
+                                    <div class="col-sm-8">
+                                        <span class="badge @GetStatusBadgeClass(Model.TrangThai)">
+                                            <span class="status-indicator"></span>
+                                            @Model.TrangThai
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4 fw-bold text-dark">Phí giao hàng:</div>
+                                    <div class="col-sm-8 money text-success">@(Model.PhiGiaoHang?.ToString("N0") ?? "0") ₫</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin giao hàng -->
+                    <div class="col-md-6 mb-4">
+                        <div class="info-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-truck"></i> Thông tin giao hàng</h5>
+                            </div>
+                            <div class="card-body">
+                                @if (nguoiNhan != null)
+                                {
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Người nhận:</div>
+                                        <div class="col-sm-8">@nguoiNhan.HoTen</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">SĐT người nhận:</div>
+                                        <div class="col-sm-8">@nguoiNhan.SoDienThoai</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Email:</div>
+                                        <div class="col-sm-8">@(nguoiNhan.Email ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Địa chỉ giao:</div>
+                                        <div class="col-sm-8">@nguoiNhan.DiaChi</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Ghi chú:</div>
+                                        <div class="col-sm-8">@(string.IsNullOrEmpty(nguoiNhan.GhiChu) ? "Không có ghi chú" : nguoiNhan.GhiChu)</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Ngày tạo:</div>
+                                        <div class="col-sm-8">@(nguoiNhan.CreatedDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-user-slash fa-2x text-warning mb-3"></i>
+                                        <h6 class="text-warning mb-3">Chưa có thông tin người nhận</h6>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi tiết sản phẩm -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="info-card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-boxes"></i> Chi tiết sản phẩm</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="80">Mã SP</th>
+                                                <th>Tên sản phẩm</th>
+                                                <th width="100" class="text-center">Số lượng</th>
+                                                <th width="150" class="text-end">Đơn giá</th>
+                                                <th width="150" class="text-end">Thành tiền</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in chiTietDonHangs)
+                                            {
+                                                <tr>
+                                                    <td>@item.MaSP</td>
+                                                    <td>
+                                                        <div class="fw-bold">@(item.SanPham?.TenSP ?? "Sản phẩm #" + item.MaSP)</div>
+                                                        <small class="text-muted">
+                                                            @(item.SanPham?.MauSac ?? "")@(!string.IsNullOrEmpty(item.SanPham?.MauSac) && !string.IsNullOrEmpty(item.SanPham?.KichThuoc) ? " - " : "")@(item.SanPham?.KichThuoc ?? "")
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">@item.SoLuong</td>
+                                                    <td class="text-end money">@string.Format("{0:N0}", item.DonGia) ₫</td>
+                                                    <td class="text-end fw-bold money text-success">@string.Format("{0:N0}", item.SoLuong * item.DonGia) ₫</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="4" class="text-end fw-bold">Tổng tiền sản phẩm:</td>
+                                                <td class="text-end fw-bold money text-success">@string.Format("{0:N0}", tongTienSanPham) ₫</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="4" class="text-end fw-bold">Phí giao hàng:</td>
+                                                <td class="text-end fw-bold money text-success">@string.Format("{0:N0}", Model.PhiGiaoHang ?? 0) ₫</td>
+                                            </tr>
+                                            <tr class="table-primary">
+                                                <td colspan="4" class="text-end fw-bold fs-5">Tổng cộng:</td>
+                                                <td class="text-end fw-bold fs-5 money text-success">@string.Format("{0:N0}", tongTienDonHang) ₫</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông tin thanh toán -->
+                @if (thanhToan != null)
+                {
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Thông tin thanh toán</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Phương thức:</div>
+                                        <div class="col-sm-8">@thanhToan.PhuongThuc</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Số tiền:</div>
+                                        <div class="col-sm-8 fw-bold money text-success">@string.Format("{0:N0}", thanhToan.SoTien) ₫</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Trạng thái:</div>
+                                        <div class="col-sm-8">
+                                            <span class="badge @GetPaymentStatusBadgeClass(thanhToan.TrangThai)">
+                                                @thanhToan.TrangThai
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4 fw-bold text-dark">Ngày thanh toán:</div>
+                                        <div class="col-sm-8">@(thanhToan.NgayThanhToan?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Nút điều hướng -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            @Html.ActionLink("← Quay lại danh sách", "Index", null, new { @class = "btn btn-secondary" })
+                            <div class="action-buttons">
+                                @if (Model.TrangThai == "Chờ xử lý")
+                                {
+                                    @Html.ActionLink("Bắt đầu giao", "QuickUpdate", new { id = Model.MaDH, trangThai = "Đang giao" }, new
+                                    {
+                                        @class = "btn btn-primary",
+                                        onclick = "return confirm('Xác nhận bắt đầu giao đơn hàng #" + Model.MaDH + "?');"
+                                    })
+                                }
+
+                                @if (Model.TrangThai == "Đang giao")
+                                {
+                                    @Html.ActionLink("Thành công", "QuickUpdate", new { id = Model.MaDH, trangThai = "Giao hàng thành công" }, new
+                                    {
+                                        @class = "btn btn-success",
+                                        onclick = "return confirm('Xác nhận đơn hàng #" + Model.MaDH + " đã giao thành công?');"
+                                    })
+
+                                    @Html.ActionLink("Thất bại", "QuickUpdate", new { id = Model.MaDH, trangThai = "Giao hàng thất bại" }, new
+                                    {
+                                        @class = "btn btn-danger",
+                                        onclick = "return confirm('Xác nhận đơn hàng #" + Model.MaDH + " giao thất bại?');"
+                                    })
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-hide alerts
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        switch (status)
+        {
+            case "Giao hàng thành công":
+                return "bg-success";
+            case "Đang giao":
+                return "bg-primary";
+            case "Chờ xử lý":
+            case "Chờ xác nhận":
+                return "bg-warning";
+            case "Giao hàng thất bại":
+                return "bg-danger";
+            default:
+                return "bg-secondary";
+        }
+    }
+
+    public string GetPaymentStatusBadgeClass(string status)
+    {
+        switch (status)
+        {
+            case "Đã thanh toán":
+                return "bg-success";
+            case "Đang xử lý":
+                return "bg-warning";
+            case "Đã hủy":
+                return "bg-danger";
+            default:
+                return "bg-secondary";
+        }
+    }
+}

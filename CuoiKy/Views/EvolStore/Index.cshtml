@@ -1,0 +1,1199 @@
+﻿﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Đã bỏ comment
+}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    nav > p {
+        font-size: 60px;
+        text-align: center;
+        margin: 20px 0px;
+        color: #333;
+        font-style: italic;
+    }
+
+    nav > h2 {
+        text-align: center;
+        color: rgb(39, 201, 204);
+        text-shadow: 2px 3px 4px rgba(255,255,0,0.3);
+        font-size: 34px;
+        margin-bottom: 25px;
+    }
+
+    hr {
+        width: 80%;
+        margin: 15px auto;
+        border: 2px solid #ddd;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* SỬA LẠI PHẦN SẢN PHẨM CHO SLIDER */
+    .sanpham {
+        position: relative;
+        width: 100%;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        box-shadow: 4px 5px 15px rgba(141, 139, 139, 0.2);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: white;
+        margin-bottom: 0;
+    }
+
+        .sanpham:hover {
+            transform: translateY(-6px);
+            box-shadow: 6px 10px 20px rgba(141, 139, 139, 0.4);
+            border-color: rgb(39, 201, 204);
+        }
+
+        .sanpham > .sale {
+            position: absolute;
+            top: 12px;
+            right: 0;
+            z-index: 2;
+        }
+
+    .sale {
+        width: 55px;
+        height: 45px;
+        background: #ed1c24;
+        color: #fff;
+        padding: 12px 6px;
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .sanpham > h5 {
+        text-align: center;
+        font-size: 22px;
+        color: rgb(95, 113, 118);
+        padding: 15px 10px 8px;
+        transition: color 0.3s ease;
+        font-weight: bold;
+    }
+
+    .sanpham:hover > h5 {
+        color: rgb(39, 201, 204);
+    }
+
+    .sanpham > p {
+        text-align: center;
+        font-size: 20px;
+        padding: 8px;
+        padding-bottom: 12px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .sanpham > img {
+        width: 100%;
+        height: 280px;
+        object-fit: cover;
+        transition: all 0.4s ease;
+    }
+
+    .sanpham:hover > img {
+        transform: scale(1.07);
+    }
+
+    .sanpham > nav {
+        font-size: 18px;
+        margin-top: 0px;
+        text-align: center;
+        text-decoration: line-through;
+        color: #888;
+        padding-bottom: 15px;
+    }
+
+    h2.button {
+        border: 2px solid #333;
+        margin: 25px auto 50px;
+        width: 200px;
+        text-align: center;
+        border-radius: 8px;
+        padding: 14px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        h2.button:hover {
+            background-color: #333;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+            h2.button:hover > a {
+                color: white;
+            }
+
+        h2.button > a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            transition: color 0.3s ease;
+            display: block;
+            font-size: 18px;
+        }
+
+    .to-top {
+        width: 55px;
+        height: 55px;
+        background-color: rgba(0,0,0,0.7);
+        line-height: 55px;
+        text-align: center;
+        border-radius: 8px;
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+        .to-top:hover {
+            background-color: rgb(39, 201, 204);
+            transform: translateY(-4px);
+        }
+
+        .to-top > a {
+            text-decoration: none;
+            color: white;
+            display: block;
+            font-size: 22px;
+        }
+
+    .article {
+        width: 80%;
+        margin: 60px auto;
+        display: flex;
+        gap: 80px;
+        align-items: center;
+    }
+
+    .us {
+        width: 70%;
+        margin-top: 0;
+    }
+
+        .us > h3 {
+            font-size: 26px;
+            font-style: italic;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .us > p {
+            margin-top: 25px;
+            font-size: 17px;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        .us > img {
+            margin-top: 25px;
+            max-width: 200px;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+            .us > img:hover {
+                transform: scale(1.05);
+            }
+
+    .we {
+        width: 100%;
+    }
+
+        .we > img {
+            width: 100%;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+            .we > img:hover {
+                transform: scale(1.02);
+            }
+
+    /* SLIDER STYLES - SỬA LẠI */
+    .slider-container {
+        position: relative;
+        width: 98%;
+        margin: 35px auto;
+        overflow: hidden;
+        padding: 0 40px;
+    }
+
+    .slider-wrapper {
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .slider-track {
+        display: flex;
+        transition: transform 0.5s ease-in-out;
+        gap: 1%;
+    }
+
+    .slide {
+        flex: 0 0 24%;
+        min-width: 24%;
+    }
+
+    .slider-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(39, 201, 204, 0.9);
+        border: none;
+        color: white;
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .slider-nav:hover {
+            background: rgba(39, 201, 204, 1);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .slider-nav.prev {
+            left: 0;
+        }
+
+        .slider-nav.next {
+            right: 0;
+        }
+
+    /* ========== CHAT STYLES ========== */
+    /* Nút mở chat */
+    .chat-button {
+        position: fixed;
+        bottom: 25px;
+        right: 100px;
+        z-index: 999;
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 15px 30px;
+        box-shadow: 0 4px 20px rgba(39, 201, 204, 0.4);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+        .chat-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(39, 201, 204, 0.5);
+            padding: 15px 35px;
+        }
+
+        .chat-button i {
+            font-size: 1.4rem;
+        }
+
+    /* Popup chat - ẨN MẶC ĐỊNH */
+    .chat-popup {
+        display: none; /* Ẩn mặc định */
+        position: fixed;
+        bottom: 90px;
+        right: 25px;
+        z-index: 1001;
+        width: 450px;
+        height: 600px;
+        max-width: 90vw;
+        max-height: 80vh;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        overflow: hidden;
+        animation: slideInUp 0.3s ease;
+        flex-direction: column; /* Giữ thuộc tính flex nhưng không hiển thị */
+    }
+
+        /* Class active sẽ hiển thị chat */
+        .chat-popup.active {
+            display: flex !important;
+        }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-header {
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        padding: 20px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+        .chat-header h5 {
+            margin: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .close-chat {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+
+        .close-chat:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+            width: 35px;
+            height: 35px;
+        }
+
+    .chat-status {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 8px;
+    }
+
+    .chat-body {
+        background: #fafafa;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #chatWindow {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: white;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-input-area {
+        padding: 20px;
+        border-top: 1px solid #eee;
+        background: white;
+        flex-shrink: 0;
+    }
+
+    /* Tin nhắn */
+    .message-left {
+        background: #f1f1f1;
+        padding: 12px 16px;
+        border-radius: 18px 18px 18px 4px;
+        margin-bottom: 12px;
+        max-width: 85%;
+        align-self: flex-start;
+        font-size: 1rem;
+        line-height: 1.4;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        word-wrap: break-word;
+    }
+
+    .message-right {
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 18px 18px 4px 18px;
+        margin-bottom: 12px;
+        max-width: 85%;
+        align-self: flex-end;
+        font-size: 1rem;
+        line-height: 1.4;
+        box-shadow: 0 2px 8px rgba(39, 201, 204, 0.2);
+        word-wrap: break-word;
+    }
+
+    .message-center {
+        background: #fff3cd;
+        color: #856404;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin: 10px auto;
+        text-align: center;
+        max-width: 90%;
+        font-size: 0.9rem;
+        border: 1px solid #ffeaa7;
+        clear: both;
+    }
+
+    /* Đề xuất câu hỏi */
+    .suggestions-container {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 15px;
+        margin: 15px 10px;
+        border: 1px solid #e9ecef;
+        display: block;
+    }
+
+    .suggestions-title {
+        font-weight: 600;
+        color: #27c9cc;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+        text-align: center;
+    }
+
+    .suggestions-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .suggestion-btn {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px 15px;
+        text-align: left;
+        font-size: 0.85rem;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+        .suggestion-btn:hover {
+            background: #27c9cc;
+            color: white;
+            border-color: #27c9cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(39, 201, 204, 0.2);
+        }
+
+        .suggestion-btn i {
+            font-size: 0.9rem;
+            min-width: 20px;
+        }
+
+    /* Scrollbar chat */
+    #chatWindow::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #chatWindow::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    #chatWindow::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+    }
+
+        #chatWindow::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+    /* Overlay chat */
+    .chat-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 998;
+        backdrop-filter: blur(3px);
+    }
+
+    /* Form input */
+    #messageInput {
+        padding: 12px 15px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        transition: border 0.3s;
+    }
+
+        #messageInput:focus {
+            border-color: #27c9cc;
+            box-shadow: 0 0 0 0.2rem rgba(39, 201, 204, 0.25);
+        }
+
+    #sendButton, #requestButton {
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    /* Thông báo */
+    .notification {
+        position: fixed;
+        top: 25px;
+        right: 25px;
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 2000;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        animation: fadeInOut 5s;
+        font-size: 1rem;
+        font-weight: 500;
+        max-width: 350px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    @@keyframes fadeInOut {
+        0% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+
+        15% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        85% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+    }
+
+    /* Nút chat */
+    .btn-primary {
+        background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+        border: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        border: none;
+    }
+
+        .btn-primary:hover, .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+    /* Loading */
+    .fa-spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Responsive cho chat */
+    @@media (max-width: 768px) {
+        .chat-button {
+            right: 20px;
+            bottom: 20px;
+            padding: 12px 25px;
+            font-size: 1rem;
+        }
+
+        .chat-popup {
+            right: 50%;
+            transform: translateX(50%);
+            width: 380px;
+            height: 550px;
+            max-width: 95vw;
+            max-height: 85vh;
+        }
+
+        .to-top {
+            right: 85px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .chat-popup {
+            width: 95vw;
+            height: 85vh;
+            right: 2.5vw;
+            transform: none;
+            bottom: 10px;
+        }
+
+        .chat-button {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            right: 15px;
+            bottom: 15px;
+        }
+
+        .to-top {
+            width: 45px;
+            height: 45px;
+            line-height: 45px;
+            bottom: 15px;
+            right: 70px;
+        }
+
+        .suggestions-list {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Responsive cho slider */
+    @@media (max-width: 1200px) {
+        .slide {
+            flex: 0 0 32%;
+            min-width: 32%;
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .slide {
+            flex: 0 0 48%;
+            min-width: 48%;
+        }
+
+        .slider-container {
+            padding: 0 35px;
+        }
+
+        nav > p {
+            font-size: 48px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .slide {
+            flex: 0 0 100%;
+            min-width: 100%;
+        }
+
+        .slider-nav {
+            width: 35px;
+            height: 35px;
+            font-size: 20px;
+        }
+
+        .slider-container {
+            padding: 0 30px;
+        }
+
+        .sanpham > h5 {
+            font-size: 18px;
+        }
+
+        .sanpham > p {
+            font-size: 16px;
+        }
+
+        nav > p {
+            font-size: 36px;
+            margin: 15px 10px;
+        }
+
+        .article {
+            flex-direction: column;
+            gap: 40px;
+            width: 90%;
+        }
+
+        .us, .we {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        nav > p {
+            font-size: 28px;
+        }
+
+        nav > h2 {
+            font-size: 28px;
+        }
+
+        h2.button {
+            width: 180px;
+            padding: 12px;
+        }
+
+        .us > h3 {
+            font-size: 22px;
+        }
+
+        .us > p {
+            font-size: 16px;
+        }
+    }
+</style>
+
+<nav>
+    <p>"Thời Trang Là Cách Nói Lên Bạn Là Ai Mà Không Cần Tốn Lấy Một Lời"</p>
+    <h2>Sản phẩm bán chạy</h2>
+</nav>
+<hr />
+
+<!-- Slider sản phẩm bán chạy -->
+<div class="slider-container">
+    <div class="slider-wrapper">
+        <div class="slider-track" id="slider1">
+            @if (ViewBag.SanPhamBanChay != null)
+            {
+                foreach (var sp in ViewBag.SanPhamBanChay)
+                {
+                    <div class="slide">
+                        <div class="sanpham">
+                            <img src="~/Images/@(sp.MaSP + "a.jpg")" alt="@sp.TenSP" />
+                            <h5>@sp.TenSP</h5>
+                            <p>@sp.Gia.ToString("N0")₫</p>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+    <button class="slider-nav prev" onclick="moveSlide('slider1', -1)">‹</button>
+    <button class="slider-nav next" onclick="moveSlide('slider1', 1)">›</button>
+</div>
+    
+<h2 class="button clickable" onclick="location.href='@Url.Action("CuaHang", "EvolStore")'">
+    Xem thêm
+</h2>
+
+    <nav>
+        <h2>Đang sale</h2>
+    </nav>
+    <hr />
+
+    <!-- Slider sản phẩm đang sale -->
+    <div class="slider-container">
+        <div class="slider-wrapper">
+            <div class="slider-track" id="slider2">
+                @if (ViewBag.SanPhamSale != null)
+                {
+                    foreach (var sp in ViewBag.SanPhamSale)
+                    {
+                        <div class="slide">
+                            <div class="sanpham">
+                                <div class="sale">-10%</div>
+                                <img src="~/Images/@(sp.MaSP + "a.jpg")" alt="@sp.TenSP" />
+                                <h5>@sp.TenSP</h5>
+                                <p>@((sp.Gia * 0.9m).ToString("N0"))₫</p>
+                                <nav>@sp.Gia.ToString("N0")₫</nav>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <button class="slider-nav prev" onclick="moveSlide('slider2', -1)">‹</button>
+        <button class="slider-nav next" onclick="moveSlide('slider2', 1)">›</button>
+    </div>
+
+    <article class="article">
+        <div class="us">
+            <h3>"Share your dreams, together we build a better world."</h3>
+            <p>
+                Với khẩu hiệu "Share your dreams, together we build a better world.",
+                tụi mình mong muốn được đồng hành, cổ vũ thế hệ trẻ trên hành trình
+                phát triển bản thân, hướng đến một cộng đồng tích cực nơi mà mọi người
+                có thể tự tin thể hiện màu sắc cá nhân.
+            </p>
+            <img src="/images/logo.jpg" alt="logo" />
+        </div>
+        <div class="we"><img src="/images/we.png" alt="we" /></div>
+    </article>
+
+    <!-- ========== PHẦN CHAT ========== -->
+    <!-- Nút mở chat -->
+    <button class="chat-button" id="openChatBtn">
+        <i class="fas fa-comments"></i> <span>Chat hỗ trợ</span>
+    </button>
+
+    <!-- Overlay nền tối -->
+    <div class="chat-overlay" id="chatOverlay"></div>
+
+    <!-- Popup chat -->
+    <div class="chat-popup" id="chatPopup">
+        <div class="chat-header">
+            <h5><i class="fas fa-headset"></i> Hỗ trợ trực tuyến</h5>
+            <button class="close-chat" id="closeChatBtn">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="chat-status">Trạng thái: <span id="statusText">Chưa kết nối</span></div>
+        </div>
+
+        <div class="chat-body">
+            <div id="chatWindow">
+                <div class="text-center text-muted pt-5">
+                    <p style="font-size: 1.1rem; margin-bottom: 5px;">👋 Chào mừng đến với EVOL Store!</p>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Nhấn "Yêu cầu hỗ trợ" để kết nối với nhân viên</p>
+                </div>
+
+                <!-- Phần đề xuất câu hỏi -->
+                <div id="suggestionsBox" class="suggestions-container">
+                    <p class="suggestions-title">💡 Bạn có thể hỏi:</p>
+                    <div class="suggestions-list">
+                        <button class="suggestion-btn" data-question="Có chương trình khuyến mãi nào không?">
+                            <i class="fas fa-gift"></i> Khuyến mãi?
+                        </button>
+                        <button class="suggestion-btn" data-question="Sản phẩm bán chạy nhất hiện nay là gì?">
+                            <i class="fas fa-fire"></i> Sản phẩm hot?
+                        </button>
+                        <button class="suggestion-btn" data-question="Có ship hàng toàn quốc không?">
+                            <i class="fas fa-shipping-fast"></i> Giao hàng?
+                        </button>
+                        <button class="suggestion-btn" data-question="Tôi muốn đổi trả sản phẩm">
+                            <i class="fas fa-exchange-alt"></i> Đổi trả?
+                        </button>
+                        <button class="suggestion-btn" data-question="Kích thước sản phẩm như thế nào?">
+                            <i class="fas fa-ruler"></i> Kích thước?
+                        </button>
+                        <button class="suggestion-btn" data-question="Tôi muốn xem bộ sưu tập mới">
+                            <i class="fas fa-tshirt"></i> Sản phẩm mới?
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-group">
+                    <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn của bạn..." disabled>
+                    <div class="input-group-append">
+                        <button id="sendButton" class="btn btn-primary" disabled>
+                            <i class="fas fa-paper-plane"></i> Gửi
+                        </button>
+                        <button id="requestButton" class="btn btn-success">
+                            <i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="to-top">
+        <a href="#top"><i class="fa-solid fa-arrow-up"></i></a>
+    </div>
+
+    @section Scripts {
+        <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+        <script src="/signalr/hubs"></script>
+
+        <script>
+            // Biến lưu trữ vị trí hiện tại của từng slider
+            let sliderStates = {
+                'slider1': 0,
+                'slider2': 0
+            };
+
+            document.addEventListener('DOMContentLoaded', function () {
+                initSlider('slider1');
+                initSlider('slider2');
+
+                // Tự động chạy slider mỗi 4 giây
+                setInterval(() => moveSlide('slider1', 1), 4000);
+                setInterval(() => moveSlide('slider2', 1), 4200);
+            });
+
+            function initSlider(sliderId) {
+                const track = document.getElementById(sliderId);
+                if (!track) return;
+
+                const slides = track.querySelectorAll('.slide');
+                const slideCount = slides.length;
+                const visibleSlides = getVisibleSlidesCount();
+
+                const container = track.closest('.slider-container');
+                const prevBtn = container.querySelector('.prev');
+                const nextBtn = container.querySelector('.next');
+
+                if (slideCount <= visibleSlides) {
+                    if (prevBtn) prevBtn.style.display = 'none';
+                    if (nextBtn) nextBtn.style.display = 'none';
+                } else {
+                    if (prevBtn) prevBtn.style.display = 'flex';
+                    if (nextBtn) nextBtn.style.display = 'flex';
+                }
+            }
+
+            function getVisibleSlidesCount() {
+                const width = window.innerWidth;
+                if (width < 768) return 1;
+                if (width < 992) return 2;
+                if (width < 1200) return 3;
+                return 4;
+            }
+
+            function getSlideWidth() {
+                const visibleSlides = getVisibleSlidesCount();
+                return 100 / visibleSlides;
+            }
+
+            function moveSlide(sliderId, direction) {
+                const track = document.getElementById(sliderId);
+                if (!track) return;
+
+                const slides = track.querySelectorAll('.slide');
+                const slideCount = slides.length;
+                const visibleSlides = getVisibleSlidesCount();
+
+                let currentIndex = sliderStates[sliderId];
+                currentIndex += direction;
+
+                const maxIndex = Math.max(0, slideCount - visibleSlides);
+
+                if (currentIndex < 0) {
+                    currentIndex = maxIndex;
+                } else if (currentIndex > maxIndex) {
+                    currentIndex = 0;
+                }
+
+                const slideWidth = getSlideWidth();
+                const translateX = -(currentIndex * slideWidth);
+
+                track.style.transform = `translateX(${translateX}%)`;
+                sliderStates[sliderId] = currentIndex;
+            }
+
+            window.addEventListener('resize', function () {
+                sliderStates['slider1'] = 0;
+                sliderStates['slider2'] = 0;
+
+                const track1 = document.getElementById('slider1');
+                const track2 = document.getElementById('slider2');
+
+                if (track1) track1.style.transform = 'translateX(0)';
+                if (track2) track2.style.transform = 'translateX(0)';
+
+                initSlider('slider1');
+                initSlider('slider2');
+            });
+
+            // ========== CHAT FUNCTIONALITY ==========
+            $(function () {
+                var chat = $.connection.chatHub;
+                var isConnected = false;
+                var isChatOpen = false;
+                var pendingQuestion = null;
+
+                // Mở popup chat
+                $('#openChatBtn').click(openChat);
+
+                // Đóng popup chat
+                $('#closeChatBtn').click(closeChat);
+                $('#chatOverlay').click(closeChat);
+
+                // Đóng khi nhấn ESC
+                $(document).keydown(function (e) {
+                    if (e.keyCode === 27 && isChatOpen) {
+                        closeChat();
+                    }
+                });
+
+                function openChat() {
+                    $('#chatPopup').addClass('active'); // THÊM CLASS ACTIVE
+                    $('#chatOverlay').show();
+                    isChatOpen = true;
+                    $('body').css('overflow', 'hidden');
+                    $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+
+                    if (!$('#messageInput').prop('disabled')) {
+                        $('#messageInput').focus();
+                    }
+                }
+
+                function closeChat() {
+                    $('#chatPopup').removeClass('active'); // XÓA CLASS ACTIVE
+                    $('#chatOverlay').hide();
+                    isChatOpen = false;
+                    $('body').css('overflow', 'auto');
+                }
+
+                function showNotification(message) {
+                    var notification = $('<div class="notification">' + message + '</div>');
+                    $('body').append(notification);
+
+                    setTimeout(function () {
+                        notification.fadeOut(300, function () {
+                            $(this).remove();
+                        });
+                    }, 5000);
+                }
+
+                function addMessage(content, side) {
+                    var messageClass = side === 'left' ? 'message-left' : 'message-right';
+                    var html = '<div class="' + messageClass + '">' +
+                        $('<div/>').text(content).html() +
+                        '</div>';
+                    $('#chatWindow').append(html);
+                    $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+                }
+
+                function addSystemMessage(message) {
+                    var html = '<div class="message-center">' +
+                        $('<div/>').text(message).html() +
+                        '</div>';
+                    $('#chatWindow').append(html);
+                    $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+                }
+
+                function toggleSuggestions(show) {
+                    if (show) {
+                        $('#suggestionsBox').show();
+                    } else {
+                        $('#suggestionsBox').hide();
+                    }
+                }
+
+                $(document).on('click', '.suggestion-btn', function () {
+                    var question = $(this).data('question');
+
+                    if ($('#messageInput').prop('disabled')) {
+                        pendingQuestion = question;
+                        chat.server.requestSupport();
+                        $('#requestButton').prop('disabled', true)
+                            .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ...');
+                    } else {
+                        sendMessage(question);
+                    }
+                });
+
+                function sendMessage(message) {
+                    if (!message.trim()) return;
+
+                    addMessage('Bạn: ' + message, 'right');
+                    chat.server.sendMessage(message);
+                    $('#messageInput').val('').focus();
+                }
+
+                chat.client.receiveMessage = function (sender, message) {
+                    addMessage(sender + ': ' + message, 'left');
+                    if (!isChatOpen) {
+                        showNotification('💬 Có tin nhắn mới từ nhân viên');
+                    }
+                };
+
+                chat.client.receiveSystemMessage = function (message) {
+                    addSystemMessage(message);
+
+                    if (message.includes("kết nối")) {
+                        $('#messageInput').prop('disabled', false);
+                        $('#sendButton').prop('disabled', false);
+                        $('#requestButton').prop('disabled', true)
+                            .html('<i class="fas fa-user-check"></i> Đã kết nối');
+                        toggleSuggestions(false);
+
+                        if (pendingQuestion) {
+                            setTimeout(function () {
+                                sendMessage(pendingQuestion);
+                                pendingQuestion = null;
+                            }, 1000);
+                        }
+
+                        if (isChatOpen) {
+                            $('#messageInput').focus();
+                        }
+
+                        if (!isChatOpen) {
+                            showNotification('✅ Nhân viên đã kết nối với bạn');
+                        }
+                    } else if (message.includes("đóng")) {
+                        $('#messageInput').prop('disabled', true);
+                        $('#sendButton').prop('disabled', true);
+                        $('#requestButton').prop('disabled', false)
+                            .html('<i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ');
+                        toggleSuggestions(true);
+                        pendingQuestion = null;
+                    }
+                };
+
+                $.connection.hub.start().done(function () {
+                    isConnected = true;
+                    $('#statusText').text('Đã kết nối máy chủ').css('color', '#4CAF50');
+
+                    $('#requestButton').click(function () {
+                        chat.server.requestSupport();
+                        addSystemMessage("🕒 Đang kết nối với nhân viên hỗ trợ...");
+                        $(this).prop('disabled', true)
+                            .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ...');
+                    });
+
+                    $('#sendButton').click(function () {
+                        var msg = $('#messageInput').val().trim();
+                        sendMessage(msg);
+                    });
+
+                    $('#messageInput').keypress(function (e) {
+                        if (e.which === 13) {
+                            $('#sendButton').click();
+                        }
+                    });
+
+                    toggleSuggestions(true);
+
+                }).fail(function (err) {
+                    console.error('Kết nối thất bại:', err);
+                    $('#statusText').text('Lỗi kết nối').css('color', '#F44336');
+                    addSystemMessage("❌ Không thể kết nối đến máy chủ chat");
+                });
+            });
+        </script>
+    }

@@ -1,0 +1,138 @@
+﻿
+@{
+    ViewBag.Title = "FooterPartial";
+}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    footer {
+        color: white;
+        background-color: #1a1a1a;
+        margin-top: 60px;
+        padding: 40px 0 0;
+    }
+
+        footer > .top {
+            margin: 0 auto;
+            width: 85%;
+            display: flex;
+            justify-content: space-between;
+            gap: 50px;
+            padding-bottom: 30px;
+        }
+
+            footer > .top h6 {
+                font-size: 19px;
+                padding: 20px 0px;
+                color: rgb(39, 201, 204);
+            }
+
+            footer > .top p {
+                margin-top: 10px;
+                color: #ccc;
+                line-height: 1.5;
+                font-size: 15px;
+            }
+
+            footer > .top > .col1 {
+                width: 40%;
+            }
+
+                footer > .top > .col1 img {
+                    width: 200px;
+                    margin-bottom: 15px;
+                    transition: transform 0.3s ease;
+                }
+
+
+                    
+
+            footer > .top > .col2 {
+                width: 50%;
+                padding-right: 30px;
+                padding-left: 30px;
+            }
+
+            footer > .top > .col2 img:hover {
+                transform: scale(1.05);
+            }
+                footer > .top > .col2 > a > img {
+                    border-radius: 15px;
+                    width: 200px;
+                }
+
+            footer > .top > .col3 {
+                width: 50%;
+                padding-left: 50px;
+            }
+            
+    input[type="submit"] {
+        cursor: pointer;
+        padding: 13px 26px;
+        border: none;
+        border-radius: 6px;
+        font-size: 15px;
+        margin-top: 12px;
+        background-color: rgb(39, 201, 204);
+        color: white;
+        transition: all 0.3s ease;
+        font-weight: bold;
+    }
+
+        input[type="submit"]:hover {
+            background-color: rgb(30, 180, 183);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+    footer > .bottom {
+        background-color: #111;
+        padding: 20px 0;
+    }
+
+        footer > .bottom > p {
+            text-align: center;
+            font-size: 15px;
+            padding: 10px;
+            color: #888;
+        }
+</style>
+<footer>
+    <div class="top">
+        <div class="col1">
+            <h6>@Labels.Footer_About_Title</h6>
+            <p>@Labels.Footer_Registered</p>
+            <p>@Labels.Footer_Address</p>
+            <img src="~/images/bocongthuong.png" alt="logo" />
+        </div>
+
+        <div class="col2">
+            <a href="@Url.Action("Index", "EvolStore")">
+                <img src="/images/logo.jpg" alt="@Labels.Layout_Header_Brand" />
+            </a>
+        </div>
+
+        <div class="col3">
+            <h6>@Labels.Footer_Hotline_Title</h6>
+            <p>
+                <i class="fa-solid fa-phone"></i>
+                @Labels.Footer_Hotline_Label: 0793826001
+            </p>
+            <p>
+                <i class="fa-regular fa-envelope"></i>
+                @Labels.Footer_Email_Label:
+                <a href="mailto:evolstore@gmail.com">evolstore@gmail.com</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="bottom">
+        <p>@Labels.Footer_Copyright</p>
+    </div>
+
+</footer>
+

@@ -1,0 +1,479 @@
+﻿@model List<CuoiKy.Models.DonHang>
+@using CuoiKy.Models
+@functions {
+    public string GetStatusClass(string status)
+    {
+        switch (status)
+        {
+            case "Chờ xác nhận": return "status-choxacnhan";
+            case "Đã xác nhận": return "status-daxacnhan";
+            case "Đang đóng gói": return "status-dangdonggoi";
+            case "Đã chuyển cho ĐVVC": return "status-dachuyenchodvvc";
+            case "Đang giao hàng": return "status-danggiao";
+            case "Giao hàng thành công": return "status-giaohangthanhcong";
+            case "Đã hủy": return "status-dahuy";
+            default: return "status-choxacnhan";
+        }
+    }
+}
+@{
+    Layout = null;
+    // Lấy Vai trò từ Session và khai báo biến isAdmin
+    var userRole = Session["AdminRole"] as string;
+    var isAdmin = userRole == "Admin";
+    var isNhanVien = userRole == "NhanVien";
+    var isNhanVienKho = userRole == "NhanVienKho";
+    // Biến để gộp Admin và Nhân viên thường (những người có toàn quyền)
+    var isFullAccessNhanVien = isAdmin || isNhanVien;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Đơn hàng - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+            .logo h2 {
+                color: white;
+                font-size: 1.5rem;
+            }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 25px;
+                color: #bdc3c7;
+                text-decoration: none;
+                transition: all 0.3s;
+            }
+
+                .nav-links a i {
+                    margin-right: 10px;
+                    width: 20px;
+                    text-align: center;
+                }
+
+                .nav-links a:hover,
+                .nav-links a.active {
+                    background: #34495e;
+                    color: white;
+                    border-left: 4px solid var(--primary);
+                }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .status-shipping {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .status-completed {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .status-cancelled {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        select {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        /* CSS cho các trạng thái mới */
+        .status-choxacnhan {
+            color: #f39c12;
+            font-weight: 600;
+            background: #fef9e7;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #f39c12;
+        }
+
+        .status-daxacnhan {
+            color: #3498db;
+            font-weight: 600;
+            background: #ebf5fb;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #3498db;
+        }
+
+        .status-dangdonggoi {
+            color: #9b59b6;
+            font-weight: 600;
+            background: #f4ecf7;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #9b59b6;
+        }
+
+        .status-dachuyenchodvvc {
+            color: #e67e22;
+            font-weight: 600;
+            background: #fef5e7;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #e67e22;
+        }
+
+        .status-danggiao {
+            color: #2980b9;
+            font-weight: 600;
+            background: #e8f4fd;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #2980b9;
+        }
+
+        .status-giaohangthanhcong {
+            color: #27ae60;
+            font-weight: 600;
+            background: #eafaf1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #27ae60;
+        }
+
+        .status-dahuy {
+            color: #c0392b;
+            font-weight: 600;
+            background: #fdedec;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #c0392b;
+        }
+
+        .status-select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 5px;
+            background: white;
+            min-width: 160px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Reports")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Reports" || ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Thống kê & Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("RevenueByDate")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Doanh thu theo ngày</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Orders")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Orders" || ViewContext.RouteData.Values["Action"].ToString() == "OrderDetails" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quản lý Đơn hàng</span>
+                    </a>
+                </li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" || ViewContext.RouteData.Values["Action"].ToString() == "AddProduct" || ViewContext.RouteData.Values["Action"].ToString() == "EditProduct" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Customers")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Customers" || ViewContext.RouteData.Values["Action"].ToString() == "AddCustomer" || ViewContext.RouteData.Values["Action"].ToString() == "EditCustomer" ? "active" : "")">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý Khách hàng</span>
+                    </a>
+                </li>
+            }
+
+            @if (isAdmin)
+            {
+                <li>
+                    <a href="@Url.Action("Employees")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Employees" || ViewContext.RouteData.Values["Action"].ToString() == "AddEmployee" || ViewContext.RouteData.Values["Action"].ToString() == "EditEmployee" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Quản lý Nhân viên</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Accounts")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Accounts" || ViewContext.RouteData.Values["Action"].ToString() == "AddAccount" || ViewContext.RouteData.Values["Action"].ToString() == "EditAccount" ? "active" : "")">
+                        <i class="fas fa-user-lock"></i>
+                        <span>Quản lý Tài khoản</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Sales")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Sales" ? "active" : "")">
+                        <i class="fas fa-tags"></i>
+                        <span>Quản lý Giảm giá</span>
+                    </a>
+                </li>
+            }
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Quản lý Đơn hàng</h1>
+            <div class="user-info">
+                <span>Xin chào, <strong>@Session["AdminUsername"]</strong></span>
+                <a href="@Url.Action("Logout")" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã ĐH</th>
+                        <th>Khách hàng</th>
+                        <th>Ngày đặt</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        // Tính tổng tiền - XỬ LÝ NULL
+                        decimal total = 0;
+                        foreach (var item in order.ChiTietDonHangs)
+                        {
+                            total += (item.SoLuong ?? 0) * (item.DonGia ?? 0);
+                        }
+                        total += order.PhiGiaoHang ?? 0;
+
+                        <tr>
+                            <td>#@order.MaDH</td>
+                            <td>
+                                @if (order.KhachHang != null)
+                                {
+                                    @order.KhachHang.HoTen
+                                }
+                                else
+                                {
+                                    <span>Khách hàng không xác định</span>
+                                }
+                            </td>
+                            <td>@(order.NgayDat?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                            <td>@total.ToString("N0") ₫</td>
+                            <td>
+                                @{
+                                    var statusClass = GetStatusClass(order.TrangThai);
+                                }
+                                <span class="@statusClass">@order.TrangThai</span>
+                            </td>
+                            <td class="actions">
+
+                                <select onchange="updateOrderStatus(@order.MaDH, this.value)" class="status-select">
+                                    <option value="Chờ xác nhận" @(order.TrangThai == "Chờ xác nhận" ? "selected" : "")>Chờ xác nhận</option>
+                                    <option value="Đã xác nhận" @(order.TrangThai == "Đã xác nhận" ? "selected" : "")>Đã xác nhận</option>
+                                    <option value="Đang đóng gói" @(order.TrangThai == "Đang đóng gói" ? "selected" : "")>Đang đóng gói</option>
+                                    <option value="Đã chuyển cho ĐVVC" @(order.TrangThai == "Đã chuyển cho ĐVVC" ? "selected" : "")>Đã chuyển cho ĐVVC</option>
+                                    <option value="Đang giao hàng" @(order.TrangThai == "Đang giao hàng" ? "selected" : "")>Đang giao hàng</option>
+                                    <option value="Giao hàng thành công" @(order.TrangThai == "Giao hàng thành công" ? "selected" : "")>Giao hàng thành công</option>
+                                    <option value="Đã hủy" @(order.TrangThai == "Đã hủy" ? "selected" : "")>Đã hủy</option>
+                                </select>
+
+                                <a href="@Url.Action("OrderDetails", new { id = order.MaDH })" class="btn btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function updateOrderStatus(orderId, status) {
+            fetch('@Url.Action("UpdateOrderStatus")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    status: status
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Cập nhật trạng thái thành công!');
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra!');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

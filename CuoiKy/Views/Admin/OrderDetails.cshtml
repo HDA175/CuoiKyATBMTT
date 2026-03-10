@@ -1,0 +1,970 @@
+﻿@model CuoiKy.Models.DonHang
+@{
+    Layout = null;
+    // Lấy Vai trò từ Session và khai báo biến isAdmin
+    var userRole = Session["AdminRole"] as string;
+    var isAdmin = userRole == "Admin";
+    var isNhanVienKho = userRole == "NhanVienKho";
+    var customer = Model.KhachHang;
+    var orderDetails = Model.ChiTietDonHangs.ToList();
+    var recipient = ViewBag.Recipient as CuoiKy.Models.NguoiNhan;
+    var isNhanVien = userRole == "NhanVien";
+    // Biến để gộp Admin và Nhân viên thường (những người có toàn quyền)
+    var isFullAccessNhanVien = isAdmin || isNhanVien;
+}
+
+@functions {
+    public string GetStatusClass(string status)
+    {
+        switch (status)
+        {
+            case "Chờ xác nhận": return "status-choxacnhan";
+            case "Đã xác nhận": return "status-daxacnhan";
+            case "Đang đóng gói": return "status-dangdonggoi";
+            case "Đã chuyển cho ĐVVC": return "status-dachuyenchodvvc";
+            case "Đang giao hàng": return "status-danggiao";
+            case "Giao hàng thành công": return "status-giaohangthanhcong";
+            case "Đã hủy": return "status-dahuy";
+            default: return "status-choxacnhan";
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết Đơn hàng - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 25px;
+                color: #bdc3c7;
+                text-decoration: none;
+                transition: all 0.3s;
+            }
+
+                .nav-links a:hover {
+                    background: #34495e;
+                    color: white;
+                }
+
+                .nav-links a i {
+                    margin-right: 10px;
+                    width: 20px;
+                    text-align: center;
+                }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 30px;
+        }
+
+            .header h1 {
+                color: var(--dark);
+                font-size: 2rem;
+                font-weight: 700;
+            }
+
+        .user-info {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+            .btn-primary:hover {
+                background: #2980b9;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+            }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+            .btn-danger:hover {
+                background: #c0392b;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+            }
+
+        .order-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Thay đổi tỷ lệ từ 1fr 1fr thành 2fr 1fr */
+            gap: 25px;
+            margin-bottom: 25px;
+            align-items: start; /* Đảm bảo các cột căn theo top */
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            height: 100%; /* Chiếm toàn bộ chiều cao */
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            height: fit-content; /* Chỉ chiếm chiều cao vừa đủ nội dung */
+        }
+
+        /* Đảm bảo các item trong cột phải không bị kéo dài */
+        .customer-info, .recipient-info {
+            height: fit-content;
+        }
+
+        .order-info, .customer-info, .recipient-info, .order-items {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+            .order-info:hover, .customer-info:hover, .recipient-info:hover, .order-items:hover {
+                transform: translateY(-5px);
+            }
+
+        .order-info {
+            border-left: 5px solid var(--primary);
+        }
+
+        .customer-info {
+            border-left: 5px solid var(--success);
+        }
+
+        .recipient-info {
+            border-left: 5px solid #9b59b6;
+        }
+
+        .order-items {
+            border-left: 5px solid var(--warning);
+        }
+
+        .section-title {
+            margin-bottom: 25px;
+            color: var(--dark);
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--light);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+            .section-title i {
+                color: var(--primary);
+                font-size: 1.2em;
+            }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 150px;
+            font-size: 1rem;
+        }
+
+        .info-value {
+            color: #333;
+            text-align: right;
+            flex: 1;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            color: var(--warning);
+            font-weight: 700;
+            background: #fef9e7;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-shipping {
+            color: var(--primary);
+            font-weight: 700;
+            background: #ebf5fb;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-completed {
+            color: var(--success);
+            font-weight: 700;
+            background: #eafaf1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-cancelled {
+            color: var(--danger);
+            font-weight: 700;
+            background: #fdedec;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+
+            .item-row:hover {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px 15px;
+            }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-right: 20px;
+            border: 2px solid #e0e0e0;
+            transition: transform 0.3s ease;
+        }
+
+        .item-row:hover .item-image {
+            transform: scale(1.05);
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--dark);
+            font-size: 1.1rem;
+        }
+
+        .item-price {
+            color: var(--success);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .item-quantity {
+            color: #666;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .item-total {
+            font-weight: 800;
+            color: var(--dark);
+            font-size: 1.2rem;
+            min-width: 140px;
+            text-align: right;
+        }
+
+        .total-section {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 3px solid #eee;
+            text-align: right;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            padding: 10px 0;
+        }
+
+        .grand-total {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--dark);
+            border-top: 3px solid #ddd;
+            padding-top: 20px;
+            margin-top: 15px;
+        }
+
+        @@media (max-width: 1200px) {
+            .order-container {
+                grid-template-columns: 1fr;
+            }
+
+            .left-column, .right-column {
+                gap: 20px;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+
+                .sidebar .logo h2 {
+                    display: none;
+                }
+
+                .sidebar .nav-links a span {
+                    display: none;
+                }
+
+            .main-content {
+                margin-left: 70px;
+                padding: 20px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                align-items: flex-start;
+            }
+
+                .header h1 {
+                    font-size: 1.5rem;
+                }
+
+            .user-info {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .item-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                text-align: left;
+            }
+
+            .item-total {
+                text-align: left;
+                min-width: auto;
+                width: 100%;
+                border-top: 1px dashed #ddd;
+                padding-top: 10px;
+            }
+
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .info-value {
+                text-align: left;
+                width: 100%;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .main-content {
+                padding: 15px;
+            }
+
+            .order-info, .customer-info, .recipient-info, .order-items {
+                padding: 20px;
+            }
+
+            .btn {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+
+            .section-title {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* CSS cho các trạng thái mới trong OrderDetails */
+        .status-choxacnhan {
+            color: #f39c12;
+            font-weight: 700;
+            background: #fef9e7;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 2px solid #f39c12;
+        }
+
+        .status-daxacnhan {
+            color: #3498db;
+            font-weight: 700;
+            background: #ebf5fb;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 2px solid #3498db;
+        }
+
+        .status-dangdonggoi {
+            color: #9b59b6;
+            font-weight: 700;
+            background: #f4ecf7;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 2px solid #9b59b6;
+        }
+
+        .status-dachuyenchodvvc {
+            color: #e67e22;
+            font-weight: 700;
+            background: #fef5e7;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 2px solid #e67e22;
+        }
+
+        .status-danggiao {
+            color: #2980b9;
+            font-weight: 700;
+            background: #e8f4fd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 2px solid #2980b9;
+        }
+
+        .status-giaohangthanhcong {
+            color: #27ae60;
+            font-weight: 700;
+            background: #eafaf1;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 2px solid #27ae60;
+        }
+
+        .status-dahuy {
+            color: #c0392b;
+            font-weight: 700;
+            background: #fdedec;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 2px solid #c0392b;
+        }
+
+        /* Timeline styles */
+        .status-timeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+            min-width: 100px;
+        }
+
+            .timeline-step::after {
+                content: '';
+                position: absolute;
+                top: 20px;
+                right: -50%;
+                width: 100%;
+                height: 3px;
+                background: #ddd;
+                z-index: 1;
+            }
+
+            .timeline-step:last-child::after {
+                display: none;
+            }
+
+            .timeline-step.completed::after {
+                background: #27ae60;
+                box-shadow: 0 0 5px rgba(39, 174, 96, 0.3);
+            }
+
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            position: relative;
+            z-index: 2;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .timeline-step.completed .timeline-dot {
+            background: #27ae60;
+            transform: scale(1.1);
+        }
+
+        .timeline-step.current .timeline-dot {
+            background: #3498db;
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+
+        .timeline-label {
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+            max-width: 100px;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        .timeline-step.completed .timeline-label {
+            color: #27ae60;
+            font-weight: 700;
+        }
+
+        .timeline-step.current .timeline-label {
+            color: #3498db;
+            font-weight: 800;
+        }
+
+        /* Responsive cho timeline */
+        @@media (max-width: 768px) {
+            .status-timeline {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .timeline-step {
+                flex-direction: row;
+                width: 100%;
+                align-items: center;
+                gap: 15px;
+            }
+
+                .timeline-step::after {
+                    display: none;
+                }
+
+            .timeline-dot {
+                margin-bottom: 0;
+                min-width: 40px;
+            }
+
+            .timeline-label {
+                text-align: left;
+                max-width: none;
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Reports")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Reports" || ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Thống kê & Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("RevenueByDate")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Doanh thu theo ngày</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Orders")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Orders" || ViewContext.RouteData.Values["Action"].ToString() == "OrderDetails" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quản lý Đơn hàng</span>
+                    </a>
+                </li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" || ViewContext.RouteData.Values["Action"].ToString() == "AddProduct" || ViewContext.RouteData.Values["Action"].ToString() == "EditProduct" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Customers")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Customers" || ViewContext.RouteData.Values["Action"].ToString() == "AddCustomer" || ViewContext.RouteData.Values["Action"].ToString() == "EditCustomer" ? "active" : "")">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý Khách hàng</span>
+                    </a>
+                </li>
+            }
+
+            @if (isAdmin)
+            {
+                <li>
+                    <a href="@Url.Action("Employees")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Employees" || ViewContext.RouteData.Values["Action"].ToString() == "AddEmployee" || ViewContext.RouteData.Values["Action"].ToString() == "EditEmployee" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Quản lý Nhân viên</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Accounts")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Accounts" || ViewContext.RouteData.Values["Action"].ToString() == "AddAccount" || ViewContext.RouteData.Values["Action"].ToString() == "EditAccount" ? "active" : "")">
+                        <i class="fas fa-user-lock"></i>
+                        <span>Quản lý Tài khoản</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Sales")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Sales" ? "active" : "")">
+                        <i class="fas fa-tags"></i>
+                        <span>Quản lý Giảm giá</span>
+                    </a>
+                </li>
+            }
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Chi tiết Đơn hàng #@Model.MaDH</h1>
+            <div class="user-info">
+                <a href="@Url.Action("Orders")" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+                <a href="@Url.Action("Logout")" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+
+        <div class="order-container">
+            <!-- Cột trái: Thông tin đơn hàng và sản phẩm -->
+            <div class="left-column">
+                <!-- Thông tin đơn hàng -->
+                <div class="order-info">
+                    <h3 class="section-title"><i class="fas fa-receipt"></i> Thông tin đơn hàng</h3>
+                    <div class="info-row">
+                        <span class="info-label">Mã đơn hàng:</span>
+                        <span class="info-value">#@Model.MaDH</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày đặt:</span>
+                        <span class="info-value">@Model.NgayDat.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Trạng thái:</span>
+                        <span class="info-value @GetStatusClass(Model.TrangThai)">@Model.TrangThai</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phí giao hàng:</span>
+                        <span class="info-value">@Model.PhiGiaoHang.Value.ToString("N0") ₫</span>
+                    </div>
+                </div>
+
+                <!-- Timeline trạng thái -->
+                <div class="info-row">
+                    <span class="info-label">Tiến trình:</span>
+                    <div class="status-timeline">
+                        @{
+                            var statuses = new List<string> {
+                "Chờ xác nhận",
+                "Đã xác nhận",
+                "Đang đóng gói",
+                "Đã chuyển cho ĐVVC",
+                "Đang giao hàng",
+                "Giao hàng thành công"
+            };
+                            var currentStatus = Model.TrangThai;
+                            var currentIndex = statuses.IndexOf(currentStatus);
+                        }
+
+                        @for (int i = 0; i < statuses.Count; i++)
+                        {
+                            var status = statuses[i];
+                            var stepClass = "timeline-step";
+
+                            if (i < currentIndex)
+                            {
+                                stepClass += " completed";
+                            }
+                            else if (i == currentIndex)
+                            {
+                                stepClass += " current";
+                            }
+
+                            <div class="@stepClass">
+                                <div class="timeline-dot">
+                                    @(i + 1)
+                                </div>
+                                <span class="timeline-label">@status</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Chi tiết sản phẩm -->
+                <div class="order-items">
+                    <h3 class="section-title"><i class="fas fa-box-open"></i> Chi tiết sản phẩm</h3>
+                    @if (orderDetails != null && orderDetails.Any())
+                    {
+                        foreach (var item in orderDetails)
+                        {
+                            <div class="item-row">
+                                <img src="~/Images/@(item.MaSP + "a.jpg")"
+                                     alt="@(item.SanPham?.TenSP ?? "Sản phẩm")"
+                                     class="item-image"
+                                     onerror="this.src='https://via.placeholder.com/80'">
+                                <div class="item-details">
+                                    <div class="item-name">@(item.SanPham?.TenSP ?? "Sản phẩm #" + item.MaSP)</div>
+                                    <div class="item-price">@item.DonGia.Value.ToString("N0") ₫</div>
+                                </div>
+                                <div class="item-quantity">Số lượng: @item.SoLuong</div>
+                                <div class="item-total">
+                                    @((item.SoLuong * item.DonGia).Value.ToString("N0")) ₫
+                                </div>
+                            </div>
+                        }
+
+                        <div class="total-section">
+                            @{
+                                decimal subtotal = 0;
+                                foreach (var item in orderDetails)
+                                {
+                                    subtotal += (item.SoLuong ?? 0) * (item.DonGia ?? 0);
+                                }
+                                decimal shippingFee = Model.PhiGiaoHang ?? 0;
+                                decimal grandTotal = subtotal + shippingFee;
+                            }
+
+                            <div class="total-row">
+                                <span>Tạm tính:</span>
+                                <span>@subtotal.ToString("N0") ₫</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Phí giao hàng:</span>
+                                <span>@shippingFee.ToString("N0") ₫</span>
+                            </div>
+                            <div class="total-row grand-total">
+                                <span>Tổng cộng:</span>
+                                <span>@grandTotal.ToString("N0") ₫</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                            <p>Không có chi tiết đơn hàng</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Cột phải: Thông tin khách hàng và người nhận -->
+            <div class="right-column">
+                <!-- Thông tin khách hàng -->
+                <div class="customer-info">
+                    <h3 class="section-title"><i class="fas fa-user"></i> Thông tin khách hàng</h3>
+                    @if (customer != null)
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Họ tên:</span>
+                            <span class="info-value">@customer.HoTen</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">@customer.Email</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Điện thoại:</span>
+                            <span class="info-value">@customer.SoDienThoai</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Địa chỉ:</span>
+                            <span class="info-value">@customer.DiaChi</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="info-row">
+                            <span class="info-value">Không tìm thấy thông tin khách hàng</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Thông tin người nhận -->
+                <div class="recipient-info">
+                    <h3 class="section-title"><i class="fas fa-truck"></i> Thông tin người nhận</h3>
+                    @if (recipient != null)
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Họ tên:</span>
+                            <span class="info-value">@recipient.HoTen</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">@recipient.Email</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Điện thoại:</span>
+                            <span class="info-value">@recipient.SoDienThoai</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Địa chỉ:</span>
+                            <span class="info-value">@recipient.DiaChi</span>
+                        </div>
+                        if (!string.IsNullOrEmpty(recipient.GhiChu))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">Ghi chú:</span>
+                                <span class="info-value">@recipient.GhiChu</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="info-row">
+                            <span class="info-value" style="color: #666; font-style: italic;">
+                                <i class="fas fa-info-circle"></i> Không có thông tin người nhận riêng
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

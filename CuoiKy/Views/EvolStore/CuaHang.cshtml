@@ -1,0 +1,2874 @@
+﻿@model List<CuoiKy.Models.SanPham>
+@{
+    Layout = null;
+    var selectedLoai = ViewBag.SelectedLoai as string ?? "";
+    var selectedChatLieu = ViewBag.SelectedChatLieu as string ?? "";
+    var selectedMucGia = ViewBag.SelectedMucGia as string ?? "";
+    var searchTerm = ViewBag.SearchTerm as string ?? "";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Cửa Hàng - EvolStore</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ===========================
+           RESET & VARIABLES
+           =========================== */
+        :root {
+            --header-height: 110px;
+            --sidebar-width: 300px;
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #333;
+            --muted: #7f8c8d;
+            --page-bg: #f8f9fa;
+            --border: #e0e0e0;
+            --light-bg: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--page-bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        /* ===========================
+           PRODUCT CARD LINK STYLES
+           =========================== */
+        .product-card-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s ease;
+        }
+
+            .product-card-link:hover {
+                text-decoration: none;
+                color: inherit;
+                transform: translateY(-5px);
+            }
+
+                .product-card-link:hover .product-card {
+                    transform: translateY(-8px);
+                    box-shadow: 0 15px 30px rgba(0,0,0,.15);
+                }
+
+        /* Đảm bảo nút vẫn hoạt động bình thường */
+        .add-to-cart-btn {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ===========================
+           ANIMATIONS - ĐƠN GIẢN HÓA
+           =========================== */
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        @@keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Apply animations */
+        .toast {
+            animation: slideIn 0.3s ease;
+        }
+
+        .cart-sidebar.active {
+            animation: slideInRight 0.4s ease;
+        }
+
+        .cart-overlay.active {
+            animation: fadeIn 0.4s ease;
+        }
+
+        .cart-item.removing {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+        /* ===========================
+           HEADER
+           =========================== */
+        .header-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(0,0,0,.9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 10%;
+            transition: .3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,.12);
+        }
+
+            .header-top.scrolled {
+                padding: 12px 10%;
+                background: rgba(0,0,0,.95);
+            }
+
+            .header-top .logo img {
+                width: 200px;
+                border-radius: 12px;
+                transition: .25s ease;
+            }
+
+            .header-top.scrolled .logo img {
+                width: 160px;
+            }
+
+        .user-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+            .user-actions a {
+                text-decoration: none;
+                color: #fff;
+                font-weight: 600;
+                padding: 10px 15px;
+                border-radius: 8px;
+                transition: .25s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                position: relative;
+            }
+
+                .user-actions a:hover {
+                    background: rgba(255,255,255,.15);
+                    color: #a8e6cf;
+                    transform: translateY(-2px);
+                }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* ===========================
+           SEARCH
+           =========================== */
+        .search-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,.1);
+            border-radius: 30px;
+            padding: 8px 15px;
+            transition: all .35s ease;
+            width: 50px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+            .search-box.active {
+                width: 280px;
+                background: rgba(255,255,255,.15);
+                cursor: text;
+                border-color: rgba(255,255,255,.3);
+            }
+
+        .search-icon {
+            color: #fff;
+            font-size: 18px;
+            transition: .25s ease;
+            flex-shrink: 0;
+        }
+
+        .search-box:hover .search-icon {
+            color: #a8e6cf;
+            transform: scale(1.1);
+        }
+
+        .search-box.active .search-icon {
+            color: #a8e6cf;
+        }
+
+        .search-input {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            color: #fff;
+            font-size: 15px;
+            padding: 8px 12px;
+            width: 0;
+            opacity: 0;
+            transition: .25s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+            .search-input::placeholder {
+                color: rgba(255,255,255,.7);
+            }
+
+        .search-box.active .search-input {
+            width: 100%;
+            opacity: 1;
+        }
+
+        /* ===========================
+           LAYOUT CHÍNH
+           =========================== */
+        .main-content {
+            display: flex;
+            margin-top: var(--header-height);
+            padding-bottom: 100px;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* ===========================
+           SIDEBAR CATEGORIES
+           =========================== */
+        .categories-sidebar {
+            width: var(--sidebar-width);
+            background: #fff;
+            margin-top: 75px;
+            padding: 30px 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,.08);
+            position: sticky;
+            top: calc(var(--header-height) + 10px);
+            align-self: flex-start;
+            height: auto;
+        }
+
+        .categories-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .category-section {
+            margin-bottom: 30px;
+        }
+
+        .category-section-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .category-section-title i {
+                color: var(--primary);
+            }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #555;
+            text-decoration: none;
+            margin-bottom: 8px;
+            transition: .25s ease;
+            border-left: 3px solid transparent;
+        }
+
+            .category-link:hover {
+                background: #e9ecef;
+                color: var(--primary);
+                border-left-color: var(--primary);
+                transform: translateX(5px);
+            }
+
+            .category-link.active {
+                background: var(--primary);
+                color: #fff;
+                border-left-color: #1e70b8;
+            }
+
+        .category-count {
+            margin-left: auto;
+            font-size: .8rem;
+            background: rgba(0,0,0,.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .category-link.active .category-count {
+            background: rgba(255,255,255,.3);
+        }
+
+        /* ===========================
+           PRODUCTS
+           =========================== */
+        .products-section {
+            flex: 1;
+            margin-left: 100px;
+            margin-top: 75px;
+            padding: 40px 5% 100px;
+            min-height: 100%;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .product-count {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .product-card {
+            background: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,.08);
+            transition: .25s ease;
+            position: relative;
+            height: 535px;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .product-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 12px 20px rgba(0,0,0,.15);
+            }
+
+        .product-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background: #f5f5f5;
+            transition: transform .45s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .product-info {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+        }
+
+        .product-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            height: 3.4em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .product-price {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--danger);
+            margin-bottom: 15px;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: .2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+            .add-to-cart-btn:hover {
+                background: var(--primary-dark);
+                transform: scale(1.02);
+            }
+
+            .add-to-cart-btn:disabled {
+                background: #bdc3c7;
+                color: #7f8c8d;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .add-to-cart-btn i {
+                font-size: 1.1rem;
+            }
+
+        .out-of-stock {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+            background: rgba(231,76,60,.9);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+
+        .no-products {
+            text-align: center;
+            padding: 60px 30px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,.1);
+            grid-column: 1 / -1;
+        }
+
+            .no-products i {
+                font-size: 5rem;
+                color: #bdc3c7;
+                margin-bottom: 20px;
+            }
+
+            .no-products h3 {
+                font-size: 1.8rem;
+                color: #7f8c8d;
+                margin-bottom: 15px;
+            }
+
+            .no-products p {
+                color: #95a5a6;
+                font-size: 1.1rem;
+            }
+
+        /* ===========================
+           CART SIDEBAR
+           =========================== */
+        .cart-sidebar {
+            position: fixed;
+            top: 0;
+            right: -600px;
+            width: 580px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+            transition: right 0.4s ease;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .cart-sidebar.active {
+                right: 0;
+            }
+
+        .cart-header {
+            padding: 25px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .close-cart {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+            .close-cart:hover {
+                background: rgba(255,255,255,0.2);
+            }
+
+        .cart-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .cart-items {
+            margin-bottom: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .cart-item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+
+        .cart-item-details {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        .cart-item-variant {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .cart-item-price {
+            font-weight: 700;
+            color: var(--danger);
+            font-size: 1rem;
+        }
+
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .quantity-btn {
+            background: none;
+            border: none;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+            .quantity-btn:hover:not(:disabled) {
+                background: var(--light-bg);
+            }
+
+            .quantity-btn:disabled {
+                color: #bdc3c7;
+                cursor: not-allowed;
+            }
+
+        .quantity-input {
+            width: 40px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+        }
+
+        .remove-item {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+            .remove-item:hover {
+                background: rgba(231, 76, 60, 0.1);
+            }
+
+        .cart-summary {
+            padding: 20px;
+            background: white;
+            border-top: 2px solid var(--border);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .summary-total {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--danger);
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-top: 15px;
+        }
+
+            .checkout-btn:hover {
+                background: #27ae60;
+            }
+
+        .empty-cart {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+            .empty-cart i {
+                font-size: 4rem;
+                margin-bottom: 20px;
+                color: #bdc3c7;
+            }
+
+            .empty-cart h3 {
+                margin-bottom: 10px;
+                font-size: 1.3rem;
+            }
+
+        /* Overlay */
+        .cart-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+
+            .cart-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+        /* Continue Shopping Button */
+        .continue-shopping {
+            display: block;
+            text-align: center;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+
+            .continue-shopping:hover {
+                background: var(--primary-dark);
+                color: white;
+                text-decoration: none;
+            }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 10001;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+            .user-actions a {
+                text-decoration: none;
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 15px;
+                border-radius: 5px;
+                transition: all 0.3s ease;
+            }
+
+                .user-actions a:hover {
+                    background-color: rgba(255, 255, 255, 0.1);
+                    color: rgb(190, 230, 228);
+                }
+
+        /* CSS cho dropdown menu - SỬA ĐỔI QUAN TRỌNG */
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        /* ========== CHAT STYLES ========== */
+/* Nút mở chat */
+.chat-button {
+    position: fixed;
+    bottom: 25px;
+    right: 100px;
+    z-index: 999;
+    background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 15px 30px;
+    box-shadow: 0 4px 20px rgba(39, 201, 204, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.chat-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(39, 201, 204, 0.5);
+    padding: 15px 35px;
+}
+
+.chat-button i {
+    font-size: 1.4rem;
+}
+
+/* Popup chat - ẨN MẶC ĐỊNH */
+.chat-popup {
+    display: none; /* Ẩn mặc định */
+    position: fixed;
+    bottom: 90px;
+    right: 25px;
+    z-index: 1001;
+    width: 450px;
+    height: 600px;
+    max-width: 90vw;
+    max-height: 80vh;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    overflow: hidden;
+    animation: slideInUp 0.3s ease;
+    flex-direction: column;
+}
+
+/* Class active sẽ hiển thị chat */
+.chat-popup.active {
+    display: flex !important;
+}
+
+@@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+    color: white;
+    padding: 20px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.chat-header h5 {
+    margin: 0;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.close-chat {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+
+.close-chat:hover {
+    background: rgba(255,255,255,0.3);
+    transform: rotate(90deg);
+    width: 35px;
+    height: 35px;
+}
+
+.chat-status {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-top: 8px;
+}
+
+.chat-body {
+    background: #fafafa;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#chatWindow {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: white;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-input-area {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background: white;
+    flex-shrink: 0;
+}
+
+/* Tin nhắn */
+.message-left {
+    background: #f1f1f1;
+    padding: 12px 16px;
+    border-radius: 18px 18px 18px 4px;
+    margin-bottom: 12px;
+    max-width: 85%;
+    align-self: flex-start;
+    font-size: 1rem;
+    line-height: 1.4;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    word-wrap: break-word;
+}
+
+.message-right {
+    background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 18px 18px 4px 18px;
+    margin-bottom: 12px;
+    max-width: 85%;
+    align-self: flex-end;
+    font-size: 1rem;
+    line-height: 1.4;
+    box-shadow: 0 2px 8px rgba(39, 201, 204, 0.2);
+    word-wrap: break-word;
+}
+
+.message-center {
+    background: #fff3cd;
+    color: #856404;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 10px auto;
+    text-align: center;
+    max-width: 90%;
+    font-size: 0.9rem;
+    border: 1px solid #ffeaa7;
+    clear: both;
+}
+
+/* Đề xuất câu hỏi */
+.suggestions-container {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 10px;
+    border: 1px solid #e9ecef;
+    display: block;
+}
+
+.suggestions-title {
+    font-weight: 600;
+    color: #27c9cc;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.suggestions-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.suggestion-btn {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 15px;
+    text-align: left;
+    font-size: 0.85rem;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-btn:hover {
+    background: #27c9cc;
+    color: white;
+    border-color: #27c9cc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(39, 201, 204, 0.2);
+}
+
+.suggestion-btn i {
+    font-size: 0.9rem;
+    min-width: 20px;
+}
+
+/* Scrollbar chat */
+#chatWindow::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chatWindow::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#chatWindow::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+#chatWindow::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* Overlay chat */
+.chat-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 998;
+    backdrop-filter: blur(3px);
+}
+
+/* Form input */
+#messageInput {
+    padding: 12px 15px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    transition: border 0.3s;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#messageInput:focus {
+    border-color: #27c9cc;
+    box-shadow: 0 0 0 0.2rem rgba(39, 201, 204, 0.25);
+    outline: none;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+#sendButton, #requestButton {
+    padding: 12px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex: 1;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+    border: none;
+    color: white;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover, .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* Thông báo */
+.notification {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    background: linear-gradient(135deg, #27c9cc, #1a8a8c);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    z-index: 2000;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    animation: fadeInOut 5s;
+    font-size: 1rem;
+    font-weight: 500;
+    max-width: 350px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+@@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    15% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    85% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+}
+        /* ===========================
+   DISCOUNT STYLES
+   =========================== */
+        .discount-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            background: linear-gradient(135deg, #ff6b9d, #ff4757);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(255, 107, 157, 0.3);
+        }
+
+        .product-price-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .original-price {
+            font-size: 1rem;
+            color: #95a5a6;
+            text-decoration: line-through;
+            font-weight: 500;
+        }
+
+        .discounted-price {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--danger);
+        }
+
+        .save-amount {
+            font-size: 0.85rem;
+            color: var(--success);
+            font-weight: 600;
+            background: rgba(46, 204, 113, 0.1);
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        /* Điều chỉnh lại vị trí out-of-stock để không bị chồng lên discount-badge */
+        .out-of-stock {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+            background: rgba(231,76,60,.9);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+/* Loading */
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive cho chat */
+@@media (max-width: 768px) {
+    .chat-button {
+        right: 20px;
+        bottom: 20px;
+        padding: 12px 25px;
+        font-size: 1rem;
+    }
+
+    .chat-popup {
+        right: 50%;
+        transform: translateX(50%);
+        width: 380px;
+        height: 550px;
+        max-width: 95vw;
+        max-height: 85vh;
+    }
+}
+
+@@media (max-width: 480px) {
+    .chat-popup {
+        width: 95vw;
+        height: 85vh;
+        right: 2.5vw;
+        transform: none;
+        bottom: 10px;
+    }
+
+    .chat-button {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        right: 15px;
+        bottom: 15px;
+    }
+
+    .suggestions-list {
+        grid-template-columns: 1fr;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+}
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+            .user-info:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: rgb(190, 230, 228);
+            }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+            margin-left: auto;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 200px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001; /* Tăng z-index */
+            padding: 8px 0;
+            /* ĐẢM BẢO HIỂN THỊ */
+            display: block !important;
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: black !important;
+            font-size: 14px;
+            font-weight: normal;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f8f9fa;
+                color: #007bff;
+            }
+
+            .dropdown-item i {
+                width: 16px;
+                text-align: center;
+                font-size: 14px;
+            }
+
+        .logout-item {
+            color: black !important;
+        }
+
+            .logout-item:hover {
+                background-color: #fff5f5 !important;
+                color: #dc3545 !important;
+            }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header-top" id="headerTop">
+        <div class="logo">
+            <a href="@Url.Action("Index", "EvolStore")">
+                <img src="/images/logo.jpg" alt="logo" />
+            </a>
+        </div>
+        <div class="user-actions">
+            <!-- Search Box -->
+            <div class="search-container">
+                <div class="search-box @(!string.IsNullOrEmpty(searchTerm) ? "active" : "")" id="searchBox">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm sản phẩm..."
+                           id="searchInput" value="@searchTerm">
+                </div>
+            </div>
+
+            <!-- Giỏ hàng -->
+            <a href="#" id="cartButton">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>GIỎ HÀNG</span>
+                <span class="cart-count" id="cartCount" style="display: none;">0</span>
+            </a>
+            <!-- Đăng nhập -->
+            @if (Session["TenKhachHang"] != null)
+            {
+                <!-- Phiên bản đã sửa -->
+                <div class="user-dropdown">
+                    <div class="user-info">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <span>Xin chào, @Session["TenKhachHang"]</span>
+                        <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="@Url.Action("Index", "Account")" class="dropdown-item">
+                            <i class="fa-solid fa-user"></i>
+                            <span>Tài khoản của tôi</span>
+                        </a>
+                        <a href="@Url.Action("LogoutGet", "User")" class="dropdown-item logout-item">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Đăng xuất</span>
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- SỬA Ở ĐÂY: Thêm returnUrl vào link đăng nhập -->
+                <a href="@Url.Action("Login", "User", new { returnUrl = Request.Url.PathAndQuery })">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span>ĐĂNG NHẬP</span>
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- DANH MỤC BÊN TRÁI -->
+        <div class="categories-sidebar">
+            <h2 class="categories-title">DANH MỤC</h2>
+
+            <!-- Danh mục sản phẩm -->
+            <div class="category-section">
+                <h3 class="category-section-title"><i class="fas fa-tags"></i> DANH MỤC SẢN PHẨM</h3>
+                <ul class="category-list">
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore")"
+                           class="category-link @(string.IsNullOrEmpty(selectedLoai) ? "active" : "")">
+                            <i class="fas fa-store"></i>
+                            Tất cả sản phẩm
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "ao" })"
+                           class="category-link @(selectedLoai == "ao" ? "active" : "")">
+                            <i class="fas fa-tshirt"></i>Áo
+                            @{
+                                var countAo = Model.Count(sp => sp.Loai.Contains("Áo") && !sp.Loai.Contains("Áo khoác") && !sp.TenSP.ToLower().Contains("khoác"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "ao-khoac" })"
+                           class="category-link @(selectedLoai == "ao-khoac" ? "active" : "")">
+                            <i class="fas fa-vest"></i>Áo khoác
+                            @{
+                                var countAoKhoac = Model.Count(sp => sp.Loai.Contains("Áo khoác"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "quan" })"
+                           class="category-link @(selectedLoai == "quan" ? "active" : "")">
+                            <i class="fas fa-tshirt"></i>Quần
+                            @{
+                                var countQuan = Model.Count(sp => sp.Loai.Contains("Quần"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "vay-dam" })"
+                           class="category-link @(selectedLoai == "vay-dam" ? "active" : "")">
+                            <i class="fas fa-female"></i>Váy & Đầm
+                            @{
+                                var countVayDam = Model.Count(sp => sp.Loai.Contains("Váy") || sp.Loai.Contains("Đầm"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "giay-dep" })"
+                           class="category-link @(selectedLoai == "giay-dep" ? "active" : "")">
+                            <i class="fas fa-shoe-prints"></i>Giày dép
+                            @{
+                                var countGiay = Model.Count(sp => sp.Loai.Contains("Giày"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "phu-kien" })"
+                           class="category-link @(selectedLoai == "phu-kien" ? "active" : "")">
+                            <i class="fas fa-gem"></i>Phụ kiện
+                            @{
+                                var countPhuKien = Model.Count(sp => sp.Loai.Contains("Phụ kiện"));
+                            }
+                        </a>
+                    </li>
+                    <!-- THÊM 4 DANH MỤC MỚI -->
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "balo-tui-xach" })"
+                           class="category-link @(selectedLoai == "balo-tui-xach" ? "active" : "")">
+                            <i class="fas fa-briefcase"></i>Balo & Túi xách
+                            @{
+                                var countBaloTui = Model.Count(sp => sp.Loai.Contains("Balo") || sp.Loai.Contains("Túi"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "do-the-thao" })"
+                           class="category-link @(selectedLoai == "do-the-thao" ? "active" : "")">
+                            <i class="fas fa-running"></i>Đồ thể thao
+                            @{
+                                var countTheThao = Model.Count(sp => sp.Loai.Contains("Thể thao") || sp.TenSP.ToLower().Contains("thể thao"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "do-ngu" })"
+                           class="category-link @(selectedLoai == "do-ngu" ? "active" : "")">
+                            <i class="fas fa-bed"></i>Đồ ngủ
+                            @{
+                                var countDoNgu = Model.Count(sp => sp.Loai.Contains("Đồ ngủ") || sp.TenSP.ToLower().Contains("pijama"));
+                            }
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { loai = "do-boi" })"
+                           class="category-link @(selectedLoai == "do-boi" ? "active" : "")">
+                            <i class="fas fa-swimmer"></i>Đồ bơi
+                            @{
+                                var countDoBoi = Model.Count(sp => sp.Loai.Contains("Đồ bơi") || sp.TenSP.ToLower().Contains("bikini"));
+                            }
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Lọc theo chất liệu -->
+            <div class="category-section">
+                <h3 class="category-section-title"><i class="fas fa-palette"></i> CHẤT LIỆU</h3>
+                <ul class="category-list">
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "cotton" })"
+                           class="category-link @(selectedChatLieu == "cotton" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#3498db;"></i>Cotton
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "denim" })"
+                           class="category-link @(selectedChatLieu == "denim" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#e74c3c;"></i>Denim
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "polyester" })"
+                           class="category-link @(selectedChatLieu == "polyester" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#2ecc71;"></i>Polyester
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "da" })"
+                           class="category-link @(selectedChatLieu == "da" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#f39c12;"></i>Da
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "ni" })"
+                           class="category-link @(selectedChatLieu == "ni" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#9b59b6;"></i>Nỉ
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "lua" })"
+                           class="category-link @(selectedChatLieu == "lua" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#e91e63;"></i>Lụa
+                        </a>
+                    </li>
+                    <!-- THÊM CHẤT LIỆU MỚI -->
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "kaki" })"
+                           class="category-link @(selectedChatLieu == "kaki" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#8e44ad;"></i>Kaki
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "len" })"
+                           class="category-link @(selectedChatLieu == "len" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#d35400;"></i>Len
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { chatLieu = "vai-thun" })"
+                           class="category-link @(selectedChatLieu == "vai-thun" ? "active" : "")">
+                            <i class="fas fa-circle" style="color:#16a085;"></i>Vải thun
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Lọc theo giá -->
+            <div class="category-section">
+                <h3 class="category-section-title"><i class="fas fa-filter"></i> MỨC GIÁ</h3>
+                <ul class="category-list">
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { mucGia = "duoi-200k" })"
+                           class="category-link @(selectedMucGia == "duoi-200k" ? "active" : "")">
+                            <i class="fas fa-money-bill-wave"></i>Dưới 200.000đ
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { mucGia = "200k-500k" })"
+                           class="category-link @(selectedMucGia == "200k-500k" ? "active" : "")">
+                            <i class="fas fa-money-bill-wave"></i>200.000đ - 500.000đ
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { mucGia = "500k-1tr" })"
+                           class="category-link @(selectedMucGia == "500k-1tr" ? "active" : "")">
+                            <i class="fas fa-money-bill-wave"></i>500.000đ - 1.000.000đ
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { mucGia = "tren-1tr" })"
+                           class="category-link @(selectedMucGia == "tren-1tr" ? "active" : "")">
+                            <i class="fas fa-money-bill-wave"></i>Trên 1.000.000đ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Lọc theo thương hiệu -->
+            <div class="category-section">
+                <h3 class="category-section-title"><i class="fas fa-crown"></i> THƯƠNG HIỆU</h3>
+                <ul class="category-list">
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { thuongHieu = "evol" })"
+                           class="category-link @(ViewBag.SelectedThuongHieu == "evol" ? "active" : "")">
+                            <i class="fas fa-star" style="color:#f1c40f;"></i>Evol Fashion
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { thuongHieu = "nike" })"
+                           class="category-link @(ViewBag.SelectedThuongHieu == "nike" ? "active" : "")">
+                            <i class="fas fa-star" style="color:#e74c3c;"></i>Nike
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { thuongHieu = "adidas" })"
+                           class="category-link @(ViewBag.SelectedThuongHieu == "adidas" ? "active" : "")">
+                            <i class="fas fa-star" style="color:#3498db;"></i>Adidas
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { thuongHieu = "puma" })"
+                           class="category-link @(ViewBag.SelectedThuongHieu == "puma" ? "active" : "")">
+                            <i class="fas fa-star" style="color:#9b59b6;"></i>Puma
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { thuongHieu = "gucci" })"
+                           class="category-link @(ViewBag.SelectedThuongHieu == "gucci" ? "active" : "")">
+                            <i class="fas fa-gem" style="color:#2ecc71;"></i>Gucci
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Lọc theo kích thước -->
+            <div class="category-section">
+                <h3 class="category-section-title"><i class="fas fa-ruler"></i> KÍCH THƯỚC</h3>
+                <ul class="category-list">
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { size = "S" })"
+                           class="category-link @(ViewBag.SelectedSize == "S" ? "active" : "")">
+                            <i class="fas fa-tshirt" style="color:#3498db;"></i>Size S
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { size = "M" })"
+                           class="category-link @(ViewBag.SelectedSize == "M" ? "active" : "")">
+                            <i class="fas fa-tshirt" style="color:#2ecc71;"></i>Size M
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { size = "L" })"
+                           class="category-link @(ViewBag.SelectedSize == "L" ? "active" : "")">
+                            <i class="fas fa-tshirt" style="color:#e74c3c;"></i>Size L
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="@Url.Action("CuaHang", "EvolStore", new { size = "XL" })"
+                           class="category-link @(ViewBag.SelectedSize == "XL" ? "active" : "")">
+                            <i class="fas fa-tshirt" style="color:#f39c12;"></i>Size XL
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Nút xóa bộ lọc -->
+            @if (!string.IsNullOrEmpty(selectedLoai) || !string.IsNullOrEmpty(selectedChatLieu) || !string.IsNullOrEmpty(selectedMucGia) || !string.IsNullOrEmpty(ViewBag.SelectedThuongHieu) || !string.IsNullOrEmpty(ViewBag.SelectedSize))
+            {
+                <div class="category-section">
+                    <a href="@Url.Action("CuaHang", "EvolStore")" class="category-link" style="background:#e74c3c; color:white; justify-content:center;">
+                        <i class="fas fa-times"></i> Xóa bộ lọc
+                    </a>
+                </div>
+            }
+        </div>
+
+        <!-- PRODUCTS SECTION -->
+        <section class="products-section">
+            <h2 class="section-title">CỬA HÀNG SẢN PHẨM</h2>
+
+            @if (!string.IsNullOrEmpty(selectedLoai) || !string.IsNullOrEmpty(selectedChatLieu) || !string.IsNullOrEmpty(selectedMucGia) || !string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(ViewBag.SelectedThuongHieu) || !string.IsNullOrEmpty(ViewBag.SelectedSize))
+            {
+                <div class="product-count">
+                    Tìm thấy <strong>@Model.Count</strong> sản phẩm
+                    @if (!string.IsNullOrEmpty(searchTerm))
+                    {
+                        <span>cho từ khóa "<strong>@searchTerm</strong>"</span>
+                    }
+                    @if (!string.IsNullOrEmpty(selectedLoai))
+                    {
+                        <span>
+                            trong danh mục "<strong>
+                                @switch (selectedLoai)
+                                {
+                                    case "ao":<text>Áo</text>; break;
+                                case "ao-khoac": <text>Áo khoác</text>; break;
+                            case "quan": <text>Quần</text>; break;
+                        case "vay-dam": <text>Váy & Đầm</text>; break;
+                    case "giay-dep": <text>Giày dép</text>; break;
+                case "phu-kien": <text>Phụ kiện</text>; break;
+            case "balo-tui-xach": <text>Balo & Túi xách</text>; break;
+        case "do-the-thao": <text>Đồ thể thao</text>; break;
+    case "do-ngu": <text>Đồ ngủ</text>; break;
+case "do-boi": <text>Đồ bơi</text>; break;
+default: <text>@selectedLoai</text>; break;
+}
+                            </strong>"
+                        </span>
+                    }
+                </div>
+            }
+
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="no-products">
+                    <i class="fas fa-box-open"></i>
+                    <h3>KHÔNG CÓ SẢN PHẨM NÀO</h3>
+                    <p>Không tìm thấy sản phẩm phù hợp với bộ lọc của bạn.</p>
+                    <a href="@Url.Action("CuaHang", "EvolStore")" class="add-to-cart-btn" style="width:auto; margin-top:20px; display:inline-block;">
+                        <i class="fas fa-undo"></i> Xem tất cả sản phẩm
+                    </a>
+                </div>
+            }
+            else
+            {
+        <div class="products-grid">
+            @foreach (var product in Model)
+            {
+                // Tính toán giá gốc và giảm giá ngay trong view
+                decimal phanTramGiam = 0;
+                decimal giaGoc = product.Gia;
+                bool coGiamGia = false;
+
+                // Kiểm tra nếu sản phẩm có giảm giá (cần có thuộc tính GiamGias trong model)
+                if (product.GiamGias != null && product.GiamGias.Any())
+                {
+                    var giamGiaHienTai = product.GiamGias
+                        .Where(g => g.NgayBatDau <= DateTime.Now &&
+                                   (g.NgayKetThuc == null || g.NgayKetThuc >= DateTime.Now))
+                        .OrderByDescending(g => g.PhanTramGiam)
+                        .FirstOrDefault();
+
+                    if (giamGiaHienTai != null && giamGiaHienTai.PhanTramGiam > 0)
+                    {
+                        phanTramGiam = giamGiaHienTai.PhanTramGiam * 100;
+                        giaGoc = Math.Round(product.Gia / (1 - giamGiaHienTai.PhanTramGiam), 0);
+                        coGiamGia = true;
+                    }
+                }
+
+                <div class="product-card">
+                    <a href="@Url.Action("ChiTietSanPham", "EvolStore", new { id = product.MaSP })" class="product-card-link">
+                        @if (product.SoLuongTon <= 0)
+                        {
+                            <div class="out-of-stock">HẾT HÀNG</div>
+                        }
+
+                        @if (coGiamGia)
+                        {
+                            <div class="discount-badge">
+                                -@phanTramGiam.ToString("0")%
+                            </div>
+                        }
+
+                        <img src="~/Images/@(product.MaSP + "a.jpg")"
+                             alt="@product.TenSP"
+                             class="product-image" />
+
+                        <div class="product-info">
+                            <h3 class="product-name">@product.TenSP</h3>
+
+                            <div class="product-price-container">
+                                @if (coGiamGia)
+                                {
+                                    <div class="original-price">
+                                        @giaGoc.ToString("N0") ₫
+                                    </div>
+                                    <div class="discounted-price">
+                                        @product.Gia.ToString("N0") ₫
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="discounted-price" style="margin-top: 10px;">
+                                        @product.Gia.ToString("N0") ₫
+                                    </div>
+                                }
+                            </div>
+
+                            
+                        </div>
+                    </a>
+
+                    @if (product.SoLuongTon > 0)
+                    {
+                        <button class="add-to-cart-btn" onclick="openProductModal(@product.MaSP, '@product.TenSP.Replace("'", "\\'")')">
+                            <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="add-to-cart-btn" disabled>
+                            <i class="fas fa-times"></i> HẾT HÀNG
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+            }
+        </section>
+    </div>
+
+    <!-- FOOTER -->
+    @Html.Action("FooterPartial", "EvolStore")
+
+    <!-- Modal chọn size/màu -->
+    <div class="product-modal" id="productModal" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+">
+        <div class="modal-overlay" onclick="closeModal()" style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+    "></div>
+
+        <div class="modal-content" style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 450px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        animation: modalAppear 0.3s ease-out;
+    ">
+            <div class="modal-header" style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px 0;
+            border-bottom: none;
+        ">
+                <h3 id="modalProductName" style="
+                margin: 0;
+                color: #333;
+                font-size: 18px;
+                font-weight: bold;
+            ">
+                    Chọn thông tin sản phẩm
+                </h3>
+                <button class="close-modal" onclick="closeModal()" style="
+                background: none;
+                border: none;
+                font-size: 28px;
+                cursor: pointer;
+                color: #666;
+                padding: 0;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                    &times;
+                </button>
+            </div>
+
+            <div class="modal-body" style="padding: 25px;">
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label style="
+                    display: block;
+                    margin-bottom: 12px;
+                    color: #666;
+                    font-weight: bold;
+                    font-size: 14px;
+                ">Kích thước:</label>
+                    <div class="size-options" style="display: flex; gap: 10px;">
+                        <label class="size-option" style="
+                        flex: 1;
+                        text-align: center;
+                        padding: 12px 5px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="size" value="S" checked style="display: none;">
+                            <span>S</span>
+                        </label>
+                        <label class="size-option" style="
+                        flex: 1;
+                        text-align: center;
+                        padding: 12px 5px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="size" value="M" style="display: none;">
+                            <span>M</span>
+                        </label>
+                        <label class="size-option" style="
+                        flex: 1;
+                        text-align: center;
+                        padding: 12px 5px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="size" value="L" style="display: none;">
+                            <span>L</span>
+                        </label>
+                        <label class="size-option" style="
+                        flex: 1;
+                        text-align: center;
+                        padding: 12px 5px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="size" value="XL" style="display: none;">
+                            <span>XL</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label style="
+                    display: block;
+                    margin-bottom: 12px;
+                    color: #666;
+                    font-weight: bold;
+                    font-size: 14px;
+                ">Màu sắc:</label>
+                    <div class="color-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <label class="color-option" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 12px 15px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="color" value="Đen" checked style="display: none;">
+                            <span style="
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: #000;
+                            display: inline-block;
+                        "></span>
+                            Đen
+                        </label>
+                        <label class="color-option" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 12px 15px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="color" value="Trắng" style="display: none;">
+                            <span style="
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: #fff;
+                            border: 1px solid #ddd;
+                            display: inline-block;
+                        "></span>
+                            Trắng
+                        </label>
+                        <label class="color-option" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 12px 15px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="color" value="Xanh" style="display: none;">
+                            <span style="
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: #3498db;
+                            display: inline-block;
+                        "></span>
+                            Xanh
+                        </label>
+                        <label class="color-option" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 12px 15px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                            <input type="radio" name="color" value="Đỏ" style="display: none;">
+                            <span style="
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: #e74c3c;
+                            display: inline-block;
+                        "></span>
+                            Đỏ
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="
+                    display: block;
+                    margin-bottom: 12px;
+                    color: #666;
+                    font-weight: bold;
+                    font-size: 14px;
+                ">Số lượng:</label>
+                    <div class="quantity-selector" style="
+                    display: inline-flex;
+                    align-items: center;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    overflow: hidden;
+                ">
+                        <button type="button" onclick="decreaseModalQuantity()" style="
+                        width: 45px;
+                        height: 45px;
+                        border: none;
+                        background: #f8f9fa;
+                        cursor: pointer;
+                        font-size: 18px;
+                        transition: background 0.3s;
+                    ">
+                            -
+                        </button>
+                        <input type="number" id="modalQuantity" value="1" min="1" max="10" style="
+                        width: 60px;
+                        height: 45px;
+                        border: none;
+                        text-align: center;
+                        font-size: 16px;
+                        font-weight: bold;
+                        outline: none;
+                    ">
+                        <button type="button" onclick="increaseModalQuantity()" style="
+                        width: 45px;
+                        height: 45px;
+                        border: none;
+                        background: #f8f9fa;
+                        cursor: pointer;
+                        font-size: 18px;
+                        transition: background 0.3s;
+                    ">
+                            +
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="
+            padding: 20px 25px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 12px;
+        ">
+                <button class="btn-cancel" onclick="closeModal()" style="
+                flex: 1;
+                padding: 15px;
+                border: 2px solid #6c757d;
+                background: white;
+                color: #6c757d;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 15px;
+                font-weight: bold;
+                transition: all 0.3s;
+            ">
+                    Hủy
+                </button>
+                <button class="btn-confirm" onclick="confirmAddToCart()" style="
+                flex: 1;
+                padding: 15px;
+                border: none;
+                background: #ff6b9d;
+                color: white;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 15px;
+                font-weight: bold;
+                transition: all 0.3s;
+            ">
+                    Thêm vào giỏ hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @@keyframes modalAppear {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .size-option input:checked + span,
+        .color-option input:checked + span {
+            font-weight: bold;
+        }
+
+        .size-option input:checked ~ span {
+            border-color: #ff6b9d !important;
+            background: #fff5f8;
+            color: #ff6b9d;
+        }
+
+        .color-option input:checked ~ span:first-child {
+            transform: scale(1.1);
+        }
+
+        .color-option input:checked ~ span:last-child {
+            color: #ff6b9d;
+            font-weight: bold;
+        }
+
+        .size-option:hover,
+        .color-option:hover {
+            border-color: #ff6b9d !important;
+        }
+
+        .btn-cancel:hover {
+            background: #6c757d !important;
+            color: white !important;
+        }
+
+        .btn-confirm:hover {
+            background: #e5568b !important;
+            transform: translateY(-2px);
+        }
+
+        .quantity-selector button:hover {
+            background: #e9ecef !important;
+        }
+    </style>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-overlay" id="cartOverlay"></div>
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h2 class="cart-title">GIỎ HÀNG</h2>
+            <button class="close-cart" onclick="closeCart()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cart-content">
+            <div class="cart-items" id="cartItems">
+                <!-- Cart items will be loaded here dynamically -->
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h3>Giỏ hàng trống</h3>
+                    <p>Hãy thêm sản phẩm vào giỏ hàng của bạn</p>
+                </div>
+            </div>
+        </div>
+        <div class="cart-summary" id="cartSummary" style="display: none;">
+            <div class="summary-row">
+                <span>Tạm tính:</span>
+                <span id="subtotal">0 ₫</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Giảm giá:</span>
+                <span>-0 ₫</span>
+            </div>
+            <div class="summary-row summary-total">
+                <span>Tổng cộng:</span>
+                <span id="total">30,000 ₫</span>
+            </div>
+
+            <button class="checkout-btn" onclick="checkout()">
+                <i class="fas fa-credit-card"></i> ĐẶT MUA
+            </button>
+
+            <a href="@Url.Action("CuaHang", "EvolStore")" class="continue-shopping">
+                <i class="fas fa-arrow-left"></i> TIẾP TỤC MUA SẮM
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ===========================
+        // BIẾN TOÀN CỤC
+        // ===========================
+        let selectedProductId = null;
+        let selectedProductName = '';
+        let cart = JSON.parse(localStorage.getItem('evolstore_cart')) || [];
+
+        // ===========================
+        // KHỞI TẠO TRANG
+        // ===========================
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+            loadCartItems();
+            initModal();
+
+            // Header co lại khi cuộn
+            window.addEventListener('scroll', function () {
+                const headerTop = document.getElementById('headerTop');
+                if (window.scrollY > 50) headerTop.classList.add('scrolled');
+                else headerTop.classList.remove('scrolled');
+            });
+
+            // Tự động focus vào ô search nếu có search term
+            @if (!string.IsNullOrEmpty(searchTerm))
+            {
+                <text>
+                document.getElementById('searchBox').classList.add('active');
+                document.getElementById('searchInput').focus();
+                </text>
+            }
+        });
+
+        // ===========================
+        // TÌM KIẾM
+        // ===========================
+        const searchBox = document.getElementById('searchBox');
+        const searchInput = document.getElementById('searchInput');
+
+        searchBox.addEventListener('click', function (e) {
+            e.stopPropagation();
+            searchBox.classList.add('active');
+            searchInput.focus();
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!searchBox.contains(e.target) && searchInput.value.trim() === '') {
+                searchBox.classList.remove('active');
+            }
+        });
+
+        searchInput.addEventListener('input', function () {
+            if (this.value !== '') searchBox.classList.add('active');
+        });
+
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const q = this.value.trim();
+                if (q) {
+                    window.location.href = '@Url.Action("CuaHang", "EvolStore")?search=' + encodeURIComponent(q);
+                }
+            }
+        });
+
+        // ===========================
+        // MODAL SẢN PHẨM
+        // ===========================
+        function initModal() {
+            // Xử lý chọn size
+            document.querySelectorAll('.size-option').forEach(option => {
+                option.addEventListener('click', function () {
+                    document.querySelectorAll('.size-option').forEach(opt => {
+                        opt.style.borderColor = '#ddd';
+                        opt.style.background = 'white';
+                        opt.style.color = 'inherit';
+                    });
+                    this.style.borderColor = '#ff6b9d';
+                    this.style.background = '#fff5f8';
+                    this.style.color = '#ff6b9d';
+                });
+            });
+
+            // Xử lý chọn màu
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', function () {
+                    document.querySelectorAll('.color-option').forEach(opt => {
+                        opt.style.borderColor = '#ddd';
+                        opt.style.background = 'white';
+                        opt.querySelector('span:last-child').style.color = 'inherit';
+                        opt.querySelector('span:last-child').style.fontWeight = 'normal';
+                    });
+                    this.style.borderColor = '#ff6b9d';
+                    this.style.background = '#fff5f8';
+                    this.querySelector('span:last-child').style.color = '#ff6b9d';
+                    this.querySelector('span:last-child').style.fontWeight = 'bold';
+                });
+            });
+
+            // Kích hoạt style cho option mặc định
+            document.querySelector('.size-option input:checked').closest('.size-option').click();
+            document.querySelector('.color-option input:checked').closest('.color-option').click();
+        }
+
+        function openProductModal(productId, productName) {
+            selectedProductId = productId;
+            selectedProductName = productName;
+            document.getElementById('modalProductName').textContent = productName;
+            document.getElementById('productModal').style.display = 'block';
+
+            // Reset quantity về 1 mỗi khi mở modal
+            document.getElementById('modalQuantity').value = 1;
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').style.display = 'none';
+            selectedProductId = null;
+            selectedProductName = '';
+        }
+
+        function increaseModalQuantity() {
+            const input = document.getElementById('modalQuantity');
+            if (parseInt(input.value) < 10) {
+                input.value = parseInt(input.value) + 1;
+            }
+        }
+
+        function decreaseModalQuantity() {
+            const input = document.getElementById('modalQuantity');
+            if (parseInt(input.value) > 1) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+
+        function confirmAddToCart() {
+            if (!selectedProductId) return;
+
+            const size = document.querySelector('input[name="size"]:checked').value;
+            const color = document.querySelector('input[name="color"]:checked').value;
+            const quantity = parseInt(document.getElementById('modalQuantity').value);
+
+            addToCart(selectedProductId, selectedProductName, quantity, size, color);
+            closeModal();
+        }
+
+        function addToCart(productId, productName, quantity, size, color) {
+            // Kiểm tra sản phẩm đã có trong giỏ chưa
+            const existingItemIndex = cart.findIndex(item =>
+                item.id == productId && item.size === size && item.color === color
+            );
+
+            if (existingItemIndex > -1) {
+                // Cập nhật số lượng nếu đã có
+                cart[existingItemIndex].quantity += quantity;
+            } else {
+                // Thêm mới sản phẩm
+                const newItem = {
+                    id: productId,
+                    name: productName,
+                    price: getProductPrice(productId),
+                    quantity: quantity,
+                    size: size,
+                    color: color,
+                    image: '/Images/' + productId + 'a.jpg'
+                };
+                cart.push(newItem);
+            }
+
+            saveCart();
+            updateCartCount();
+            loadCartItems();
+            showNotification('Đã thêm vào giỏ hàng!');
+        }
+
+        function updateQuantity(productId, size, color, change) {
+            const itemIndex = cart.findIndex(item =>
+                item.id == productId && item.size === size && item.color === color
+            );
+
+            if (itemIndex > -1) {
+                cart[itemIndex].quantity += change;
+
+                // Xóa nếu số lượng <= 0
+                if (cart[itemIndex].quantity <= 0) {
+                    cart.splice(itemIndex, 1);
+                }
+
+                saveCart();
+                updateCartCount();
+                loadCartItems();
+            }
+        }
+
+        function removeFromCart(productId, size, color) {
+            cart = cart.filter(item =>
+                !(item.id == productId && item.size === size && item.color === color)
+            );
+
+            saveCart();
+            updateCartCount();
+            loadCartItems();
+            showNotification('Đã xóa sản phẩm khỏi giỏ hàng');
+        }
+
+        // ===========================
+        // HIỂN THỊ GIỎ HÀNG
+        // ===========================
+        function loadCartItems() {
+            const cartItemsContainer = document.getElementById('cartItems');
+            const cartSummary = document.getElementById('cartSummary');
+
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `
+            <div class="empty-cart">
+                <i class="fas fa-shopping-cart"></i>
+                <h3>Giỏ hàng trống</h3>
+                <p>Hãy thêm sản phẩm vào giỏ hàng của bạn</p>
+            </div>
+        `;
+                cartSummary.style.display = 'none';
+                return;
+            }
+
+            let itemsHTML = '';
+            let subtotal = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                subtotal += itemTotal;
+
+                itemsHTML += `
+            <div class="cart-item">
+                <img src="${item.image}" alt="${item.name}" class="cart-item-image"
+                     onerror="this.src='/Images/placeholder.jpg'">
+                <div class="cart-item-details">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-variant">
+                        Size: ${item.size} | Color: ${item.color}
+                    </div>
+                    <div class="cart-item-price">${formatPrice(itemTotal)} ₫</div>
+                    <div class="cart-item-actions">
+                        <div class="quantity-controls">
+                            <button class="quantity-btn" onclick="updateQuantity('${item.id}', '${item.size}', '${item.color}', -1)">-</button>
+                            <input type="text" class="quantity-input" value="${item.quantity}" readonly>
+                            <button class="quantity-btn" onclick="updateQuantity('${item.id}', '${item.size}', '${item.color}', 1)">+</button>
+                        </div>
+                        <button class="remove-item" onclick="removeFromCart('${item.id}', '${item.size}', '${item.color}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+            });
+
+            cartItemsContainer.innerHTML = itemsHTML;
+            cartSummary.style.display = 'block';
+
+            const total = subtotal;
+            document.getElementById('subtotal').textContent = formatPrice(subtotal) + ' ₫';
+            document.getElementById('total').textContent = formatPrice(total) + ' ₫';
+        }
+
+        // ===========================
+        // QUẢN LÝ GIỎ HÀNG
+        // ===========================
+        function saveCart() {
+            localStorage.setItem('evolstore_cart', JSON.stringify(cart));
+        }
+
+        function updateCartCount() {
+            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+            const cartCountElement = document.getElementById('cartCount');
+
+            if (cartCount > 0) {
+                cartCountElement.textContent = cartCount;
+                cartCountElement.style.display = 'flex';
+            } else {
+                cartCountElement.style.display = 'none';
+            }
+        }
+
+        // ===========================
+        // GIỎ HÀNG SIDEBAR
+        // ===========================
+        function openCart() {
+            document.getElementById('cartSidebar').classList.add('active');
+            document.getElementById('cartOverlay').classList.add('active');
+            loadCartItems();
+        }
+
+        function closeCart() {
+            document.getElementById('cartSidebar').classList.remove('active');
+            document.getElementById('cartOverlay').classList.remove('active');
+        }
+
+        // ===========================
+        // TIỆN ÍCH
+        // ===========================
+        function getProductPrice(productId) {
+            // Fallback prices nếu không tìm thấy
+            const prices = {
+                1: 199000, 2: 299000, 3: 399000, 4: 499000, 5: 259000,
+                6: 599000, 7: 799000, 8: 249000, 9: 459000, 10: 529000,
+                11: 339000, 12: 499000, 13: 359000, 14: 419000, 15: 689000,
+                16: 299000, 17: 449000, 18: 499000, 19: 259000, 20: 559000
+            };
+            return prices[productId] || 0;
+        }
+
+        function formatPrice(price) {
+            return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function showNotification(message) {
+            // Xóa toast cũ nếu có
+            const oldToast = document.querySelector('.toast');
+            if (oldToast) {
+                oldToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function checkout() {
+    if (cart.length === 0) {
+        alert('Giỏ hàng trống!');
+        return;
+    }
+
+    console.log("=== CHECKOUT CLICKED ===");
+    console.log("Cart items:", cart);
+
+    // Mã hóa giỏ hàng thành JSON và truyền qua URL
+    const cartData = encodeURIComponent(JSON.stringify(cart));
+    window.location.href = '@Url.Action("Index", "Checkout")?cartData=' + cartData;
+}
+
+        // ===========================
+        // EVENT LISTENERS
+        // ===========================
+        document.getElementById('cartButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            openCart();
+        });
+
+        document.getElementById('cartOverlay').addEventListener('click', closeCart);
+
+        // Đóng modal khi nhấn ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeCart();
+            }
+        });
+
+        // Ngăn sự kiện click trong modal đóng modal
+        document.querySelector('.modal-content').addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        // ===========================
+        // CHAT FUNCTIONALITY
+        // ===========================
+        $(function () {
+            var chat = $.connection.chatHub;
+            var isConnected = false;
+            var isChatOpen = false;
+            var pendingQuestion = null;
+
+            // Mở popup chat
+            $('#openChatBtn').click(openChat);
+
+            // Đóng popup chat
+            $('#closeChatBtn').click(closeChat);
+            $('#chatOverlay').click(closeChat);
+
+            // Đóng khi nhấn ESC
+            $(document).keydown(function (e) {
+                if (e.keyCode === 27 && isChatOpen) {
+                    closeChat();
+                }
+            });
+
+            function openChat() {
+                $('#chatPopup').addClass('active');
+                $('#chatOverlay').show();
+                isChatOpen = true;
+                $('body').css('overflow', 'hidden');
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+
+                if (!$('#messageInput').prop('disabled')) {
+                    $('#messageInput').focus();
+                }
+            }
+
+            function closeChat() {
+                $('#chatPopup').removeClass('active');
+                $('#chatOverlay').hide();
+                isChatOpen = false;
+                $('body').css('overflow', 'auto');
+            }
+
+            function showChatNotification(message) {
+                var notification = $('<div class="notification">' + message + '</div>');
+                $('body').append(notification);
+
+                setTimeout(function () {
+                    notification.fadeOut(300, function () {
+                        $(this).remove();
+                    });
+                }, 5000);
+            }
+
+            function addChatMessage(content, side) {
+                var messageClass = side === 'left' ? 'message-left' : 'message-right';
+                var html = '<div class="' + messageClass + '">' +
+                    $('<div/>').text(content).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            function addSystemMessage(message) {
+                var html = '<div class="message-center">' +
+                    $('<div/>').text(message).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            function toggleSuggestions(show) {
+                if (show) {
+                    $('#suggestionsBox').show();
+                } else {
+                    $('#suggestionsBox').hide();
+                }
+            }
+
+            $(document).on('click', '.suggestion-btn', function () {
+                var question = $(this).data('question');
+
+                if ($('#messageInput').prop('disabled')) {
+                    pendingQuestion = question;
+                    chat.server.requestSupport();
+                    $('#requestButton').prop('disabled', true)
+                        .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ...');
+                } else {
+                    sendMessage(question);
+                }
+            });
+
+            function sendMessage(message) {
+                if (!message.trim()) return;
+
+                addChatMessage('Bạn: ' + message, 'right');
+                chat.server.sendMessage(message);
+                $('#messageInput').val('').focus();
+            }
+
+            chat.client.receiveMessage = function (sender, message) {
+                addChatMessage(sender + ': ' + message, 'left');
+                if (!isChatOpen) {
+                    showChatNotification('💬 Có tin nhắn mới từ nhân viên');
+                }
+            };
+
+            chat.client.receiveSystemMessage = function (message) {
+                addSystemMessage(message);
+
+                if (message.includes("kết nối")) {
+                    $('#messageInput').prop('disabled', false);
+                    $('#sendButton').prop('disabled', false);
+                    $('#requestButton').prop('disabled', true)
+                        .html('<i class="fas fa-user-check"></i> Đã kết nối');
+                    toggleSuggestions(false);
+
+                    if (pendingQuestion) {
+                        setTimeout(function () {
+                            sendMessage(pendingQuestion);
+                            pendingQuestion = null;
+                        }, 1000);
+                    }
+
+                    if (isChatOpen) {
+                        $('#messageInput').focus();
+                    }
+
+                    if (!isChatOpen) {
+                        showChatNotification('✅ Nhân viên đã kết nối với bạn');
+                    }
+                } else if (message.includes("đóng")) {
+                    $('#messageInput').prop('disabled', true);
+                    $('#sendButton').prop('disabled', true);
+                    $('#requestButton').prop('disabled', false)
+                        .html('<i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ');
+                    toggleSuggestions(true);
+                    pendingQuestion = null;
+                }
+            };
+
+            $.connection.hub.start().done(function () {
+                isConnected = true;
+                $('#statusText').text('Đã kết nối máy chủ').css('color', '#4CAF50');
+
+                $('#requestButton').click(function () {
+                    chat.server.requestSupport();
+                    addSystemMessage("🕒 Đang kết nối với nhân viên hỗ trợ...");
+                    $(this).prop('disabled', true)
+                        .html('<i class="fas fa-spinner fa-spin"></i> Đang chờ...');
+                });
+
+                $('#sendButton').click(function () {
+                    var msg = $('#messageInput').val().trim();
+                    sendMessage(msg);
+                });
+
+                $('#messageInput').keypress(function (e) {
+                    if (e.which === 13) {
+                        $('#sendButton').click();
+                    }
+                });
+
+                toggleSuggestions(true);
+
+            }).fail(function (err) {
+                console.error('Kết nối thất bại:', err);
+                $('#statusText').text('Lỗi kết nối').css('color', '#F44336');
+                addSystemMessage("❌ Không thể kết nối đến máy chủ chat");
+            });
+        });
+    </script>
+    <!-- ========== PHẦN CHAT ========== -->
+    <button class="chat-button" id="openChatBtn">
+        <i class="fas fa-comments"></i> <span>Chat hỗ trợ</span>
+    </button>
+
+    <!-- Overlay nền tối -->
+    <div class="chat-overlay" id="chatOverlay"></div>
+
+    <!-- Popup chat -->
+    <div class="chat-popup" id="chatPopup">
+        <div class="chat-header">
+            <h5><i class="fas fa-headset"></i> Hỗ trợ trực tuyến</h5>
+            <button class="close-chat" id="closeChatBtn">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="chat-status">Trạng thái: <span id="statusText">Chưa kết nối</span></div>
+        </div>
+
+        <div class="chat-body">
+            <div id="chatWindow">
+                <div class="text-center text-muted pt-5">
+                    <p style="font-size: 1.1rem; margin-bottom: 5px;">👋 Chào mừng đến với EVOL Store!</p>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Nhấn "Yêu cầu hỗ trợ" để kết nối với nhân viên</p>
+                </div>
+
+                <!-- Phần đề xuất câu hỏi -->
+                <div id="suggestionsBox" class="suggestions-container">
+                    <p class="suggestions-title">💡 Bạn có thể hỏi:</p>
+                    <div class="suggestions-list">
+                        <button class="suggestion-btn" data-question="Có chương trình khuyến mãi nào không?">
+                            <i class="fas fa-gift"></i> Khuyến mãi?
+                        </button>
+                        <button class="suggestion-btn" data-question="Sản phẩm bán chạy nhất hiện nay là gì?">
+                            <i class="fas fa-fire"></i> Sản phẩm hot?
+                        </button>
+                        <button class="suggestion-btn" data-question="Có ship hàng toàn quốc không?">
+                            <i class="fas fa-shipping-fast"></i> Giao hàng?
+                        </button>
+                        <button class="suggestion-btn" data-question="Tôi muốn đổi trả sản phẩm">
+                            <i class="fas fa-exchange-alt"></i> Đổi trả?
+                        </button>
+                        <button class="suggestion-btn" data-question="Kích thước sản phẩm như thế nào?">
+                            <i class="fas fa-ruler"></i> Kích thước?
+                        </button>
+                        <button class="suggestion-btn" data-question="Tôi muốn xem bộ sưu tập mới">
+                            <i class="fas fa-tshirt"></i> Sản phẩm mới?
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-group">
+                    <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn của bạn..." disabled>
+                    <div class="input-group-append">
+                        <button id="sendButton" class="btn btn-primary" disabled>
+                            <i class="fas fa-paper-plane"></i> Gửi
+                        </button>
+                        <button id="requestButton" class="btn btn-success">
+                            <i class="fas fa-hand-paper"></i> Yêu cầu hỗ trợ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

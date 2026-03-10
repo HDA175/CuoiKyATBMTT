@@ -1,0 +1,1298 @@
+﻿@model CuoiKy.Models.KhachHang
+@{
+    ViewBag.Title = "Hồ Sơ Của Tôi";
+    Layout = null;
+
+    // Lấy TenDangNhap từ Session hoặc ViewBag
+    string tenDangNhap = Session["TenDangNhap"] as string ?? ViewBag.TenDangNhap as string;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ Sơ Của Tôi - EvolStore</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* ===========================
+           RESET & VARIABLES
+           =========================== */
+        :root {
+            --header-height: 110px;
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #333;
+            --muted: #7f8c8d;
+            --page-bg: #f8f9fa;
+            --border: #e0e0e0;
+            --light-bg: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--page-bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        /* ===========================
+           HEADER
+           =========================== */
+        .header-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(0,0,0,.9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 10%;
+            transition: .3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,.12);
+        }
+
+            .header-top.scrolled {
+                padding: 12px 10%;
+                background: rgba(0,0,0,.95);
+            }
+
+            .header-top .logo img {
+                width: 200px;
+                border-radius: 12px;
+                transition: .25s ease;
+            }
+
+            .header-top.scrolled .logo img {
+                width: 160px;
+            }
+
+        .user-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+            .user-actions a {
+                text-decoration: none;
+                color: #fff;
+                font-weight: 600;
+                padding: 10px 15px;
+                border-radius: 8px;
+                transition: .25s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                position: relative;
+            }
+
+                .user-actions a:hover {
+                    background: rgba(255,255,255,.15);
+                    color: #a8e6cf;
+                    transform: translateY(-2px);
+                }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* ===========================
+           SEARCH
+           =========================== */
+        .search-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,.1);
+            border-radius: 30px;
+            padding: 8px 15px;
+            transition: all .35s ease;
+            width: 50px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+            .search-box.active {
+                width: 280px;
+                background: rgba(255,255,255,.15);
+                cursor: text;
+                border-color: rgba(255,255,255,.3);
+            }
+
+        .search-icon {
+            color: #fff;
+            font-size: 18px;
+            transition: .25s ease;
+            flex-shrink: 0;
+        }
+
+        .search-box:hover .search-icon {
+            color: #a8e6cf;
+            transform: scale(1.1);
+        }
+
+        .search-box.active .search-icon {
+            color: #a8e6cf;
+        }
+
+        .search-input {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            color: #fff;
+            font-size: 15px;
+            padding: 8px 12px;
+            width: 0;
+            opacity: 0;
+            transition: .25s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+            .search-input::placeholder {
+                color: rgba(255,255,255,.7);
+            }
+
+        .search-box.active .search-input {
+            width: 100%;
+            opacity: 1;
+        }
+
+        /* ===========================
+           LAYOUT CHÍNH
+           =========================== */
+        .main-content {
+            margin-top: var(--header-height);
+            padding: 40px 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* CSS cho dropdown menu */
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+            .user-info:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: rgb(190, 230, 228);
+            }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+            margin-left: auto;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 200px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            padding: 8px 0;
+            display: block !important;
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: black !important;
+            font-size: 14px;
+            font-weight: normal;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f8f9fa;
+                color: #007bff;
+            }
+
+            .dropdown-item i {
+                width: 16px;
+                text-align: center;
+                font-size: 14px;
+            }
+
+        .logout-item {
+            color: black !important;
+        }
+
+            .logout-item:hover {
+                background-color: #fff5f5 !important;
+                color: #dc3545 !important;
+            }
+
+        /* ===== Account Page Styles ===== */
+        .account-page {
+            padding: 30px 0;
+            background: linear-gradient(135deg, #f3f4f6, #ffffff);
+            min-height: calc(100vh - var(--header-height) - 70px);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #111827;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* ===== Sidebar Styles ===== */
+        .account-sidebar {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .account-sidebar:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 25px 60px rgba(15, 23, 42, 0.15);
+            }
+
+        .user-profile {
+            padding: 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #111827, #374151);
+            color: #ffffff;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #111827;
+            font-size: 40px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-profile h4 {
+            margin: 10px 0 5px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .user-profile p {
+            font-size: 14px;
+            opacity: 0.9;
+            color: #d1d5db;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+        }
+
+            .sidebar-menu li {
+                margin: 0;
+                border-bottom: 1px solid #f3f4f6;
+            }
+
+                .sidebar-menu li:last-child {
+                    border-bottom: none;
+                }
+
+            .sidebar-menu a {
+                display: flex;
+                align-items: center;
+                padding: 16px 25px;
+                color: #4b5563;
+                text-decoration: none;
+                border-left: 4px solid transparent;
+                transition: all 0.3s ease;
+                position: relative;
+                background: transparent;
+            }
+
+                .sidebar-menu a i {
+                    width: 25px;
+                    margin-right: 12px;
+                    text-align: center;
+                    font-size: 18px;
+                    color: #6b7280;
+                }
+
+                .sidebar-menu a:hover {
+                    background: #f9fafb;
+                    color: #111827;
+                    border-left-color: #111827;
+                    padding-left: 30px;
+                }
+
+                    .sidebar-menu a:hover i {
+                        color: #111827;
+                    }
+
+                .sidebar-menu a.active {
+                    background: linear-gradient(90deg, rgba(17, 24, 39, 0.08) 0%, rgba(17, 24, 39, 0.04) 100%);
+                    color: #111827;
+                    border-left-color: #111827;
+                    font-weight: 600;
+                }
+
+                    .sidebar-menu a.active i {
+                        color: #111827;
+                    }
+
+        /* ===== Main Content Styles ===== */
+        .account-content {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+            border: 1px solid #e5e7eb;
+            min-height: 500px;
+        }
+
+        .section-header {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+            .section-header h2 {
+                color: #111827;
+                font-weight: 700;
+                margin: 0 0 8px 0;
+                font-size: 28px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+                .section-header h2 i {
+                    color: #111827;
+                }
+
+            .section-header .text-muted {
+                color: #6b7280;
+                font-size: 15px;
+                margin: 0;
+            }
+
+        /* ===== Form Styles ===== */
+        .profile-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-section {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+            .form-section h3 {
+                color: #111827;
+                font-size: 18px;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #111827;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 600;
+            }
+
+                .form-section h3 i {
+                    color: #111827;
+                }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 600;
+                color: #374151;
+                font-size: 14px;
+            }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+            .input-with-icon i {
+                position: absolute;
+                left: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #111827;
+                font-size: 16px;
+                z-index: 2;
+            }
+
+            .input-with-icon .form-control {
+                padding-left: 45px;
+                padding-right: 15px;
+                height: 50px;
+                border: 2px solid #d1d5db;
+                border-radius: 12px;
+                font-size: 15px;
+                transition: all 0.3s ease;
+                width: 100%;
+                background: #ffffff;
+                color: #111827;
+            }
+
+                .input-with-icon .form-control:focus {
+                    border-color: #111827;
+                    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+                    outline: none;
+                }
+
+            .input-with-icon textarea.form-control {
+                height: auto;
+                min-height: 120px;
+                padding-top: 14px;
+                resize: vertical;
+            }
+
+        .readonly-field {
+            background: #f9fafb;
+            border: 2px solid #d1d5db;
+            border-radius: 12px;
+            padding: 13px 15px 13px 45px;
+            display: flex;
+            align-items: center;
+            min-height: 50px;
+            color: #4b5563;
+            position: relative;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+            .readonly-field i {
+                position: absolute;
+                left: 15px;
+                color: #111827;
+                font-size: 16px;
+            }
+
+        .text-danger {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 8px;
+            display: block;
+            font-weight: 600;
+        }
+
+        /* ===== Form Actions ===== */
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            padding-top: 30px;
+            border-top: 2px solid #f3f4f6;
+            margin-top: 30px;
+        }
+
+        .btn-save {
+            background: #111827;
+            color: white;
+            border: 2px solid #111827;
+            padding: 14px 40px;
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            box-shadow: 0 8px 20px rgba(17, 24, 39, 0.15);
+        }
+
+            .btn-save:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 15px 30px rgba(17, 24, 39, 0.2);
+                background: #374151;
+                border-color: #374151;
+            }
+
+            .btn-save:disabled {
+                background: #9ca3af;
+                border-color: #9ca3af;
+                cursor: not-allowed;
+                opacity: 0.7;
+                transform: none;
+                box-shadow: none;
+            }
+
+        .btn-cancel {
+            background: #ffffff;
+            color: #111827;
+            border: 2px solid #111827;
+            padding: 14px 40px;
+            border-radius: 999px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+        }
+
+            .btn-cancel:hover {
+                background: #111827;
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 15px 30px rgba(17, 24, 39, 0.2);
+                text-decoration: none;
+            }
+
+        /* ===== Alert Styles ===== */
+        .alert-success {
+            background: #dcfce7;
+            border: 2px solid #bbf7d0;
+            color: #166534;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideIn 0.5s ease;
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.1);
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border: 2px solid #fecaca;
+            color: #991b1b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            animation: slideIn 0.5s ease;
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.1);
+        }
+
+            .alert-success i,
+            .alert-danger i {
+                margin-right: 12px;
+                font-size: 20px;
+            }
+
+        .close-alert {
+            background: none;
+            border: none;
+            color: #166534;
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+            padding: 0;
+            margin-left: 15px;
+        }
+
+            .close-alert:hover {
+                opacity: 1;
+            }
+
+        /* ===== Character Counter ===== */
+        .char-counter {
+            text-align: right;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+            .char-counter.warning {
+                color: #ef4444;
+            }
+
+        /* ===== Animation ===== */
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== Responsive Design ===== */
+        @@media (max-width: 768px) {
+            .account-page {
+                padding: 20px 0;
+            }
+
+            .account-content {
+                padding: 25px 20px;
+            }
+
+            .form-section {
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .btn-save, .btn-cancel {
+                width: 100%;
+                justify-content: center;
+                padding: 14px 20px;
+            }
+
+            .section-header h2 {
+                font-size: 24px;
+            }
+
+            .user-profile h4 {
+                font-size: 16px;
+            }
+
+            .user-profile p {
+                font-size: 13px;
+            }
+
+            .header-top {
+                padding: 20px 5%;
+            }
+
+                .header-top.scrolled {
+                    padding: 12px 5%;
+                }
+
+                .header-top .logo img {
+                    width: 150px;
+                }
+
+                .header-top.scrolled .logo img {
+                    width: 120px;
+                }
+
+            .user-actions {
+                gap: 10px;
+            }
+
+                .user-actions a {
+                    padding: 8px 12px;
+                    font-size: 14px;
+                }
+        }
+
+        @@media (max-width: 576px) {
+            .account-sidebar {
+                padding: 0;
+            }
+
+            .user-profile {
+                padding: 25px 15px;
+            }
+
+            .avatar {
+                width: 70px;
+                height: 70px;
+                font-size: 35px;
+            }
+
+            .sidebar-menu a {
+                padding: 14px 20px;
+                font-size: 14px;
+            }
+
+            .input-with-icon .form-control {
+                height: 48px;
+                font-size: 14px;
+            }
+
+            .readonly-field {
+                min-height: 48px;
+                font-size: 14px;
+                padding: 12px 15px 12px 45px;
+            }
+
+            .btn-save, .btn-cancel {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+
+            .account-content {
+                padding: 20px 15px;
+            }
+
+            .form-section h3 {
+                font-size: 16px;
+            }
+
+            .header-top .logo img {
+                width: 120px;
+            }
+
+            .header-top.scrolled .logo img {
+                width: 100px;
+            }
+
+            .user-info {
+                min-width: auto;
+                padding: 8px 10px;
+            }
+
+            .search-box.active {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER (Đã tích hợp từ Index.cshtml) -->
+    <div class="header-top" id="headerTop">
+        <div class="logo">
+            <a href="@Url.Action("Index", "EvolStore")">
+                <img src="/images/logo.jpg" alt="logo" />
+            </a>
+        </div>
+        <div class="user-actions">
+            <!-- Search Box -->
+            <div class="search-container">
+                <div class="search-box" id="searchBox">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm sản phẩm..."
+                           id="searchInput">
+                </div>
+            </div>
+
+            <!-- Giỏ hàng -->
+            <a href="#" id="cartButton">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>GIỎ HÀNG</span>
+                <span class="cart-count" id="cartCount" style="display: none;">0</span>
+            </a>
+            <!-- Đăng nhập -->
+            @if (Session["TenKhachHang"] != null)
+            {
+                <!-- Phiên bản đã sửa -->
+                <div class="user-dropdown">
+                    <div class="user-info">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <span>Xin chào, @Session["TenKhachHang"]</span>
+                        <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="@Url.Action("Index", "Account")" class="dropdown-item">
+                            <i class="fa-solid fa-user"></i>
+                            <span>Tài khoản của tôi</span>
+                        </a>
+                        <a href="@Url.Action("LogoutGet", "User")" class="dropdown-item logout-item">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Đăng xuất</span>
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- SỬA Ở ĐÂY: Thêm returnUrl vào link đăng nhập -->
+                <a href="@Url.Action("Login", "User", new { returnUrl = Request.Url.PathAndQuery })">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span>ĐĂNG NHẬP</span>
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="account-page">
+            <div class="container">
+                <div class="row">
+                    <!-- Sidebar -->
+                    <div class="col-md-3">
+                        <div class="account-sidebar">
+                            <div class="user-profile">
+                                <div class="avatar">
+                                    <i class="fa fa-user-circle"></i>
+                                </div>
+                                <h4>@(Session["TenKhachHang"] ?? "Khách hàng")</h4>
+                                <p>@(Session["Email"] ?? Model.Email ?? "Chưa có email")</p>
+                            </div>
+
+                            <ul class="sidebar-menu">
+                                <li>
+                                    <a href="@Url.Action("Index", "Account")">
+                                        <i class="fa fa-home"></i> Tổng quan
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("Profile", "Account")" class="active">
+                                        <i class="fa fa-user"></i> Hồ sơ
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("Orders", "Account")">
+                                        <i class="fa fa-shopping-bag"></i> Đơn hàng
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("ChangePassword", "Account")">
+                                        <i class="fa fa-key"></i> Đổi mật khẩu
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("Logout", "Account")" onclick="return confirm('Bạn có chắc muốn đăng xuất?');">
+                                        <i class="fa fa-sign-out-alt"></i> Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="col-md-9">
+                        <div class="account-content">
+                            <div class="section-header">
+                                <h2><i class="fa fa-user"></i> Hồ Sơ Của Tôi</h2>
+                                <p class="text-muted">Quản lý thông tin hồ sơ để bảo mật tài khoản</p>
+                            </div>
+
+                            @if (ViewBag.SuccessMessage != null)
+                            {
+                                <div class="alert alert-success" id="successAlert">
+                                    <i class="fa fa-check-circle"></i> @ViewBag.SuccessMessage
+                                    <button type="button" class="close-alert" onclick="document.getElementById('successAlert').style.display='none'">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
+                            }
+
+                            @if (!ViewData.ModelState.IsValid)
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="fa fa-exclamation-circle"></i>
+                                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                                </div>
+                            }
+
+                            @using (Html.BeginForm("Profile", "Account", FormMethod.Post, new { @class = "profile-form", id = "profileForm" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                @Html.HiddenFor(model => model.MaKH)
+
+                                <div class="form-section">
+                                    <h3><i class="fa fa-user-circle"></i> Thông tin cá nhân</h3>
+
+                                    <div class="form-group">
+                                        <label>Tên đăng nhập</label>
+                                        <div class="readonly-field">
+                                            <i class="fa fa-user"></i>
+                                            <span>@tenDangNhap</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Họ tên *</label>
+                                        <div class="input-with-icon">
+                                            <i class="fa fa-signature"></i>
+                                            @Html.TextBoxFor(model => model.HoTen, new
+                                            {
+                                                @class = "form-control",
+                                                placeholder = "Nhập họ tên đầy đủ",
+                                                required = "required"
+                                            })
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.HoTen, "", new { @class = "text-danger" })
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Email *</label>
+                                        <div class="input-with-icon">
+                                            <i class="fa fa-envelope"></i>
+                                            @Html.TextBoxFor(model => model.Email, new
+                                            {
+                                                @class = "form-control",
+                                                type = "email",
+                                                placeholder = "Nhập địa chỉ email",
+                                                required = "required"
+                                            })
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Số điện thoại</label>
+                                        <div class="input-with-icon">
+                                            <i class="fa fa-phone"></i>
+                                            @Html.TextBoxFor(model => model.SoDienThoai, new
+                                            {
+                                                @class = "form-control",
+                                                placeholder = "Nhập số điện thoại"
+                                            })
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.SoDienThoai, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3><i class="fa fa-map-marker-alt"></i> Địa chỉ</h3>
+
+                                    <div class="form-group">
+                                        <label>Địa chỉ</label>
+                                        <div class="input-with-icon">
+                                            <i class="fa fa-home"></i>
+                                            @Html.TextAreaFor(model => model.DiaChi, new
+                                            {
+                                                @class = "form-control",
+                                                placeholder = "Nhập địa chỉ đầy đủ",
+                                                rows = 3
+                                            })
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.DiaChi, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-save">
+                                        <i class="fa fa-save"></i> Lưu thay đổi
+                                    </button>
+                                    <a href="@Url.Action("Index", "Account")" class="btn-cancel">
+                                        <i class="fa fa-times"></i> Hủy
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER (Đã tích hợp từ Index.cshtml) -->
+    @Html.Action("FooterPartial", "EvolStore")
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ===========================
+        // KHỞI TẠO TRANG
+        // ===========================
+        document.addEventListener('DOMContentLoaded', function () {
+            // Header co lại khi cuộn
+            window.addEventListener('scroll', function () {
+                const headerTop = document.getElementById('headerTop');
+                if (window.scrollY > 50) headerTop.classList.add('scrolled');
+                else headerTop.classList.remove('scrolled');
+            });
+
+            // Menu active
+            var currentUrl = window.location.pathname.toLowerCase();
+            var menuLinks = document.querySelectorAll('.sidebar-menu a');
+
+            menuLinks.forEach(function (link) {
+                var linkUrl = link.getAttribute('href').toLowerCase();
+
+                // Kiểm tra nếu URL trùng với currentUrl
+                if (currentUrl.includes(linkUrl) && linkUrl !== '/account') {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+
+            // Đảm bảo luôn có một item active
+            if (!document.querySelector('.sidebar-menu a.active')) {
+                var homeLink = document.querySelector('.sidebar-menu a[href*="Index"]');
+                if (homeLink) {
+                    homeLink.classList.add('active');
+                }
+            }
+        });
+
+        // ===========================
+        // TÌM KIẾM
+        // ===========================
+        const searchBox = document.getElementById('searchBox');
+        const searchInput = document.getElementById('searchInput');
+
+        if (searchBox && searchInput) {
+            searchBox.addEventListener('click', function (e) {
+                e.stopPropagation();
+                searchBox.classList.add('active');
+                searchInput.focus();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!searchBox.contains(e.target) && searchInput.value.trim() === '') {
+                    searchBox.classList.remove('active');
+                }
+            });
+
+            searchInput.addEventListener('input', function () {
+                if (this.value !== '') searchBox.classList.add('active');
+            });
+
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    const q = this.value.trim();
+                    if (q) {
+                        window.location.href = '@Url.Action("CuaHang", "EvolStore")?search=' + encodeURIComponent(q);
+                    }
+                }
+            });
+        }
+
+        // ===========================
+        // FORM VALIDATION & FUNCTIONS
+        // ===========================
+        // Auto-hide success message after 5 seconds
+        setTimeout(function () {
+            var alert = document.getElementById('successAlert');
+            if (alert) {
+                alert.style.opacity = '0';
+                setTimeout(function () {
+                    alert.style.display = 'none';
+                }, 500);
+            }
+        }, 5000);
+
+        // Form validation
+        var form = document.getElementById('profileForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                var email = document.getElementById('Email');
+                var phone = document.getElementById('SoDienThoai');
+                var hoTen = document.getElementById('HoTen');
+
+                // Basic validation
+                var errors = [];
+
+                // Check required fields
+                if (!hoTen.value.trim()) {
+                    errors.push('Vui lòng nhập họ tên');
+                    hoTen.style.borderColor = '#ef4444';
+                } else {
+                    hoTen.style.borderColor = '#111827';
+                }
+
+                if (!email.value.trim()) {
+                    errors.push('Vui lòng nhập email');
+                    email.style.borderColor = '#ef4444';
+                } else {
+                    // Email validation
+                    var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                    if (!emailRegex.test(email.value)) {
+                        errors.push('Vui lòng nhập địa chỉ email hợp lệ');
+                        email.style.borderColor = '#ef4444';
+                    } else {
+                        email.style.borderColor = '#111827';
+                    }
+                }
+
+                // Phone validation (optional)
+                if (phone.value && !/^[0-9+\-\s]+$/.test(phone.value)) {
+                    errors.push('Số điện thoại chỉ được chứa số, dấu +, - và khoảng trắng');
+                    phone.style.borderColor = '#ef4444';
+                } else if (phone.value) {
+                    phone.style.borderColor = '#111827';
+                }
+
+                // If there are errors
+                if (errors.length > 0) {
+                    e.preventDefault();
+
+                    // Show error alert
+                    var errorAlert = document.querySelector('.alert-danger');
+                    if (!errorAlert) {
+                        errorAlert = document.createElement('div');
+                        errorAlert.className = 'alert alert-danger';
+                        errorAlert.innerHTML = '<i class="fa fa-exclamation-circle"></i> ' + errors.join('<br>');
+                        form.insertBefore(errorAlert, form.firstChild);
+                    } else {
+                        errorAlert.innerHTML = '<i class="fa fa-exclamation-circle"></i> ' + errors.join('<br>');
+                    }
+
+                    // Auto-hide error after 8 seconds
+                    setTimeout(function () {
+                        errorAlert.style.opacity = '0';
+                        setTimeout(function () {
+                            if (errorAlert.parentNode) {
+                                errorAlert.parentNode.removeChild(errorAlert);
+                            }
+                        }, 500);
+                    }, 8000);
+
+                    return false;
+                }
+
+                // Show loading state
+                var submitBtn = form.querySelector('.btn-save');
+                var originalHTML = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang lưu...';
+                submitBtn.disabled = true;
+
+                // Restore button after 3 seconds (in case of network error)
+                setTimeout(function () {
+                    submitBtn.innerHTML = originalHTML;
+                    submitBtn.disabled = false;
+                }, 3000);
+            });
+        }
+
+        // Add focus/blur effects to form inputs
+        var inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(function (input) {
+            input.addEventListener('focus', function () {
+                this.parentElement.classList.add('focused');
+            });
+
+            input.addEventListener('blur', function () {
+                this.parentElement.classList.remove('focused');
+                // Auto-validate on blur
+                if (this.id === 'Email' && this.value) {
+                    var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                    if (!emailRegex.test(this.value)) {
+                        this.style.borderColor = '#ef4444';
+                        // Show inline error
+                        if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('text-danger')) {
+                            var errorSpan = document.createElement('span');
+                            errorSpan.className = 'text-danger';
+                            errorSpan.textContent = 'Email không hợp lệ';
+                            this.parentElement.appendChild(errorSpan);
+                        }
+                    } else {
+                        this.style.borderColor = '#111827';
+                        // Remove inline error if exists
+                        var errorSpan = this.parentElement.querySelector('.text-danger');
+                        if (errorSpan) {
+                            errorSpan.remove();
+                        }
+                    }
+                }
+            });
+        });
+
+        // Add character counter for textarea
+        var textarea = document.querySelector('textarea');
+        if (textarea) {
+            var counter = document.createElement('div');
+            counter.className = 'char-counter';
+            textarea.parentElement.appendChild(counter);
+
+            textarea.addEventListener('input', function () {
+                var length = this.value.length;
+                counter.textContent = length + '/500 ký tự';
+
+                if (length > 500) {
+                    counter.className = 'char-counter warning';
+                    this.style.borderColor = '#ef4444';
+                } else {
+                    counter.className = 'char-counter';
+                    this.style.borderColor = length > 0 ? '#111827' : '#d1d5db';
+                }
+            });
+
+            // Trigger on load
+            textarea.dispatchEvent(new Event('input'));
+        }
+
+        // Real-time validation for phone number
+        var phoneInput = document.getElementById('SoDienThoai');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function () {
+                var value = this.value;
+                if (value && !/^[0-9+\-\s]*$/.test(value)) {
+                    this.style.borderColor = '#ef4444';
+                } else if (value) {
+                    this.style.borderColor = '#111827';
+                } else {
+                    this.style.borderColor = '#d1d5db';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

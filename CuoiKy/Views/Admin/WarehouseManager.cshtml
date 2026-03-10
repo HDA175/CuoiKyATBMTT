@@ -1,0 +1,557 @@
+﻿@model List<CuoiKy.Models.SanPham>
+@using CuoiKy.Models
+
+@{
+    Layout = null;
+    // Lấy Vai trò từ Session
+    var userRole = Session["AdminRole"] as string;
+    var isAdmin = userRole == "Admin";
+    var isNhanVienKho = userRole == "NhanVienKho";
+    var isFullAccessNhanVien = isAdmin || userRole == "NhanVien";
+
+    // Lấy danh sách Nhà Cung Cấp từ ViewBag
+    List<CuoiKy.Models.NhaCungCap> nhaCungCaps = ViewBag.NhaCungCaps as List<CuoiKy.Models.NhaCungCap> ?? new List<CuoiKy.Models.NhaCungCap>();
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Kho - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        /* CSS CHUNG (Đã sao chép từ view Products/Sales) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --info: #9b59b6;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+            .logo h2 {
+                color: white;
+                font-size: 1.5rem;
+            }
+
+        .nav-links {
+            padding: 20px 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 78px);
+        }
+
+            .nav-links li {
+                width: 100%;
+            }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 25px;
+                color: #bdc3c7;
+                text-decoration: none;
+                transition: all 0.3s;
+            }
+
+                .nav-links a:hover,
+                .nav-links a.active {
+                    background: #34495e;
+                    color: white;
+                    border-left: 4px solid var(--primary);
+                }
+
+                .nav-links a i {
+                    margin-right: 10px;
+                    width: 20px;
+                    text-align: center;
+                }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+            .header h1 {
+                color: var(--dark);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-info {
+            background: var(--info);
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Table */
+        .table-container {
+            background: white;
+            border-radius: 0 10px 10px 10px; /* Bỏ góc trên bên trái do tab menu đã chiếm */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-top: -2px; /* Dính sát vào tab-menu */
+        }
+
+        .table-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .data-table th, .data-table td {
+                padding: 15px;
+                text-align: left;
+                border-bottom: 1px solid #eee;
+                font-size: 1rem;
+            }
+
+            .data-table th {
+                background: #f8f9fa;
+                font-weight: 600;
+                color: var(--dark);
+            }
+
+            .data-table tr:hover {
+                background: #f8f9fa;
+            }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Tồn kho status */
+        .status-in-stock {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .status-low-stock {
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .status-out-of-stock {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* Tab Menu Styling */
+        .tab-menu {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 0px;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            padding-top: 20px;
+            padding-left: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+            .tab-menu button {
+                padding: 10px 20px;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #555;
+                transition: color 0.3s, border-bottom 0.3s;
+                border-bottom: 3px solid transparent;
+                margin-bottom: -2px;
+            }
+
+                .tab-menu button.active {
+                    color: var(--primary);
+                    border-bottom: 3px solid var(--primary);
+                }
+
+        .tab-content {
+            /* Loại bỏ padding-top/bottom đã có, để nội dung sát table-container */
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li><a href="@Url.Action("Reports")"><i class="fas fa-chart-line"></i><span>Thống kê & Báo cáo</span></a></li>
+                <li><a href="@Url.Action("RevenueByDate")"><i class="fas fa-calendar-alt"></i><span>Doanh thu theo ngày</span></a></li>
+                <li><a href="@Url.Action("Orders")"><i class="fas fa-shopping-cart"></i><span>Quản lý Đơn hàng</span></a></li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+
+            @if (isFullAccessNhanVien)
+            {
+                <li><a href="@Url.Action("Customers")"><i class="fas fa-users"></i><span>Quản lý Khách hàng</span></a></li>
+            }
+
+            @if (isAdmin)
+            {
+                <li><a href="@Url.Action("Employees")"><i class="fas fa-user-tie"></i><span>Quản lý Nhân viên</span></a></li>
+                <li><a href="@Url.Action("Accounts")"><i class="fas fa-user-lock"></i><span>Quản lý Tài khoản</span></a></li>
+                <li><a href="@Url.Action("Sales")"><i class="fas fa-tags"></i><span>Quản lý Giảm giá</span></a></li>
+            }
+
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1><i class="fas fa-warehouse"></i> Quản lý Kho</h1>
+            <div class="user-info">
+                <span>Xin chào, <strong>@Session["AdminUsername"]</strong></span>
+                <a href="@Url.Action("Logout")" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+
+        @* Thông báo *@
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+        }
+
+        <div class="tab-menu">
+            <button class="tab-btn active" onclick="openTab(event, 'TonKho')">
+                <i class="fas fa-box"></i> Tồn Kho Sản phẩm
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'NhaCungCap')">
+                <i class="fas fa-truck-moving"></i> Nhà Cung Cấp
+            </button>
+        </div>
+
+        <div class="table-container">
+
+            <div id="TonKho" class="tab-content">
+                <div class="table-header">
+                    <h3>Sản phẩm đang lưu trữ (@Model.Count loại sản phẩm)</h3>
+                    <div class="actions">
+                        <a href="@Url.Action("ExportInventoryToExcel")" class="btn btn-success">
+                            <i class="fas fa-file-excel"></i> Xuất Excel Tồn Kho
+                        </a>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã SP</th>
+                            <th>Tên Sản phẩm</th>
+                            <th>Nhà Cung Cấp</th>
+                            <th>Tồn Kho</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in Model)
+                        {
+                            <tr>
+                                <td>@product.MaSP</td>
+                                <td>@product.TenSP</td>
+                                <td>
+                                    @(product.NhaCungCap?.TenNCC ?? "N/A")
+                                </td>
+                                <td>@product.SoLuongTon</td>
+                                <td>
+                                    @{
+                                        string statusClass = "status-out-of-stock";
+                                        string statusText = "Hết hàng";
+                                        if (product.SoLuongTon > 10)
+                                        {
+                                            statusClass = "status-in-stock";
+                                            statusText = "Dồi dào";
+                                        }
+                                        else if (product.SoLuongTon > 0)
+                                        {
+                                            statusClass = "status-low-stock";
+                                            statusText = "Thấp";
+                                        }
+                                    }
+                                    <span class="@statusClass">@statusText</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="NhaCungCap" class="tab-content" style="display:none;">
+                <div class="table-header">
+                    <h3>Danh sách Nhà Cung Cấp (@nhaCungCaps.Count NCC)</h3>
+                    <div class="actions">
+
+                        <a href="@Url.Action("ExportSuppliersToExcel")" class="btn btn-success">
+                            <i class="fas fa-file-excel"></i> Xuất Excel NCC
+                        </a>
+
+                        <button type="button" class="btn btn-primary" onclick="showAddForm()">
+                            <i class="fas fa-user-plus"></i> Thêm NCC
+                        </button>
+                    </div>
+                </div>
+
+                <div id="AddSupplierForm" style="display:none; background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
+                    <h3><i class="fas fa-plus-circle"></i> Nhập thông tin Nhà Cung Cấp Mới</h3>
+
+
+                    @using (Html.BeginForm("SaveNewSupplier", "Admin", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+
+
+
+                        <div class="form-row" style="display: flex; gap: 20px; margin-bottom: 15px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="TenNCC">Tên Nhà Cung Cấp (*):</label>
+                                <input type="text" id="TenNCC" name="TenNCC" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="Email">Email:</label>
+                                <input type="email" id="Email" name="Email" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="SoDienThoai">Điện Thoại:</label>
+                                <input type="text" id="SoDienThoai" name="SoDienThoai" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="DiaChi">Địa Chỉ:</label>
+                                <input type="text" id="DiaChi" name="DiaChi" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu Nhà Cung Cấp</button>
+                            <button type="button" class="btn btn-danger" onclick="hideAddForm()"><i class="fas fa-times"></i> Hủy</button>
+                        </div>
+                    }
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã NCC</th>
+                            <th>Tên NCC</th>
+                            <th>Địa Chỉ</th>
+                            <th>Điện Thoại</th>
+                            <th>Email</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ncc in nhaCungCaps)
+                        {
+                            <tr>
+                                <td>@ncc.MaNCC</td>
+                                <td>@ncc.TenNCC</td>
+                                <td>@ncc.DiaChi</td>
+                                <td>@ncc.SoDienThoai</td>
+                                <td>@ncc.Email</td>
+                                <td class="actions">
+
+                                    <a href="@Url.Action("EditSupplier", new { id = ncc.MaNCC })" class="btn btn-warning" style="padding: 5px 10px; font-size: 0.9rem;">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </a>
+
+
+                                    @using (Html.BeginForm("DeleteSupplier", "Admin", new { id = ncc.MaNCC }, FormMethod.Post, new { @style = "display: inline;" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 0.9rem;"
+                                                onclick="return confirm('Bạn có chắc chắn muốn xóa Nhà Cung Cấp: @ncc.TenNCC không? Thao tác này không thể hoàn tác.');">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // JavaScript cho tính năng Tabs
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+
+            // Ẩn tất cả nội dung tab
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                // Đảm bảo không có padding nếu tab đó không hiển thị
+                tabcontent[i].style.display = "none";
+            }
+
+            // Xóa class 'active' khỏi tất cả nút tab
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Hiển thị tab hiện tại và thêm class 'active' vào nút đã click
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // Mở tab "Tồn Kho Sản phẩm" (TonKho) mặc định khi tải trang
+        document.addEventListener("DOMContentLoaded", function () {
+            // Kiểm tra xem có tab active mặc định không (nút đầu tiên)
+            var activeTab = document.querySelector(".tab-btn.active");
+            if (activeTab) {
+                // Simulate click on the active tab button to initialize the view
+                activeTab.click();
+            } else {
+                // Fallback: Nếu không có active class, click vào nút đầu tiên
+                var firstTab = document.querySelector(".tab-btn");
+                if (firstTab) {
+                    firstTab.click();
+                }
+            }
+        });
+
+
+        function showAddForm() {
+            document.getElementById('AddSupplierForm').style.display = 'block';
+            // Cuộn lên form
+            document.getElementById('AddSupplierForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideAddForm() {
+            document.getElementById('AddSupplierForm').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

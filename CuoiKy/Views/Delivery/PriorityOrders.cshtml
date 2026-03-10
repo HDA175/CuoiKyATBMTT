@@ -1,0 +1,379 @@
+﻿@model List<CuoiKy.Models.DonHang>
+
+@{
+    ViewBag.Title = "Đơn Hàng Cần Giao Ưu Tiên";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Giữ nguyên toàn bộ CSS từ file Index.cshtml */
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            transition: var(--transition);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #1e4a8a);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+            padding: 1.5rem;
+            border-bottom: none;
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #1e4a8a);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        .priority-orders {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-radius: var(--border-radius);
+            padding: 0;
+            margin-bottom: 2rem;
+            border: 2px solid var(--warning-color);
+            box-shadow: var(--box-shadow);
+        }
+
+            .priority-orders .card-header {
+                background: linear-gradient(135deg, var(--warning-color), #d39e00);
+                color: black;
+            }
+
+        /* Giữ nguyên các style khác từ file Index.cshtml */
+        .table-container {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, var(--primary-color), #1e4a8a);
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 1.2rem 1rem;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .bg-success {
+            background: linear-gradient(135deg, var(--success-color), #1e7e34) !important;
+        }
+
+        .bg-primary {
+            background: linear-gradient(135deg, var(--primary-color), #1e4a8a) !important;
+        }
+
+        .bg-warning {
+            background: linear-gradient(135deg, var(--warning-color), #d39e00) !important;
+            color: black !important;
+        }
+
+        .bg-danger {
+            background: linear-gradient(135deg, var(--danger-color), #bd2130) !important;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+            .action-buttons .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+                border-radius: 8px;
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+            }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+            .stat-card.warning {
+                background: linear-gradient(135deg, var(--warning-color), #d39e00);
+                color: black;
+            }
+
+            .stat-card h4 {
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container fade-in">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-bolt"></i> @ViewBag.Title</h4>
+                <a href="@Url.Action("Index", "Delivery")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Thống kê nhanh -->
+                <div class="stats-container">
+                    <div class="stat-card warning">
+                        <h4>@Model.Count</h4>
+                        <small>Tổng đơn ưu tiên</small>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--primary-color), #1e4a8a); color: white;">
+                        <h4>@Model.Count(d => d.TrangThai == "Chờ xử lý")</h4>
+                        <small>Chờ xử lý</small>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #138496); color: white;">
+                        <h4>@Model.Count(d => d.TrangThai == "Đang giao")</h4>
+                        <small>Đang giao</small>
+                    </div>
+                </div>
+
+                <!-- Danh sách đơn hàng ưu tiên -->
+                <div class="priority-orders">
+                    <div class="card-body">
+                        @if (Model.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th width="80">Mã ĐH</th>
+                                            <th>Khách hàng</th>
+                                            <th width="120">Ngày đặt</th>
+                                            <th width="120">Trạng thái</th>
+                                            <th width="120">Phí giao</th>
+                                            <th width="130">Tổng tiền</th>
+                                            <th>Người nhận</th>
+                                            <th width="150">Thanh toán</th>
+                                            <th width="200" class="text-center">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model)
+                                        {
+                                            var nguoiNhan = item.NguoiNhans.FirstOrDefault();
+                                            var thanhToan = item.ThanhToans.FirstOrDefault();
+
+                                            <tr>
+                                                <td><strong class="text-primary">#@item.MaDH</strong></td>
+                                                <td>
+                                                    <div class="fw-bold">@(item.KhachHang?.HoTen ?? "N/A")</div>
+                                                    <small class="text-muted">@(item.KhachHang?.SoDienThoai ?? "")</small>
+                                                </td>
+                                                <td>@string.Format("{0:dd/MM/yyyy}", item.NgayDat)</td>
+                                                <td>
+                                                    <span class="badge @GetStatusBadgeClass(item.TrangThai)">
+                                                        <span class="status-indicator"></span>
+                                                        @item.TrangThai
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">@string.Format("{0:N0}", item.PhiGiaoHang ?? 0) ₫</td>
+                                                <td class="text-end fw-bold text-success">@(item.TongTien.HasValue ? item.TongTien.Value.ToString("N0") + " ₫" : "0 ₫")</td>
+                                                <td>
+                                                    @if (nguoiNhan != null)
+                                                    {
+                                                        <div>
+                                                            <div class="fw-bold">@nguoiNhan.HoTen</div>
+                                                            <small class="text-muted">@nguoiNhan.SoDienThoai</small>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-warning">
+                                                            <i class="fas fa-exclamation-triangle"></i> Chưa có
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (thanhToan != null)
+                                                    {
+                                                        <span class="badge @GetPaymentStatusBadgeClass(thanhToan.TrangThai)">
+                                                            @thanhToan.PhuongThuc - @thanhToan.TrangThai
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">Chưa thanh toán</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        @Html.ActionLink("Chi tiết", "Details", new { id = item.MaDH }, new { @class = "btn btn-info" })
+
+                                                        @if (item.TrangThai == "Chờ xử lý")
+                                                        {
+                                                            @Html.ActionLink("Bắt đầu giao", "QuickUpdate", new { id = item.MaDH, trangThai = "Đang giao" }, new
+                                                            {
+                                                                @class = "btn btn-primary",
+                                                                onclick = "return confirm('Xác nhận bắt đầu giao đơn hàng #" + item.MaDH + "?');"
+                                                            })
+                                                        }
+
+                                                        @if (item.TrangThai == "Đang giao")
+                                                        {
+                                                            @Html.ActionLink("Thành công", "QuickUpdate", new { id = item.MaDH, trangThai = "Giao hàng thành công" }, new
+                                                            {
+                                                                @class = "btn btn-success",
+                                                                onclick = "return confirm('Xác nhận đơn hàng #" + item.MaDH + " đã giao thành công?');"
+                                                            })
+
+                                                            @Html.ActionLink("Thất bại", "QuickUpdate", new { id = item.MaDH, trangThai = "Giao hàng thất bại" }, new
+                                                            {
+                                                                @class = "btn btn-danger",
+                                                                onclick = "return confirm('Xác nhận đơn hàng #" + item.MaDH + " giao thất bại?');"
+                                                            })
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                                <h5 class="text-success">Tuyệt vời!</h5>
+                                <p class="text-muted">Không có đơn hàng nào cần xử lý gấp</p>
+                                <a href="@Url.Action("Index", "Delivery")" class="btn btn-primary mt-3">
+                                    <i class="fas fa-arrow-left"></i> Quay lại trang chính
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        switch (status)
+        {
+            case "Giao hàng thành công":
+                return "bg-success";
+            case "Đang giao":
+                return "bg-primary";
+            case "Chờ xử lý":
+            case "Chờ xác nhận":
+                return "bg-warning";
+            case "Giao hàng thất bại":
+                return "bg-danger";
+            default:
+                return "bg-secondary";
+        }
+    }
+
+    public string GetPaymentStatusBadgeClass(string status)
+    {
+        switch (status)
+        {
+            case "Đã thanh toán":
+                return "bg-success";
+            case "Đang xử lý":
+                return "bg-warning";
+            case "Đã hủy":
+                return "bg-danger";
+            default:
+                return "bg-secondary";
+        }
+    }
+}

@@ -1,0 +1,175 @@
+﻿@{
+    ViewBag.Title = "Live Chat";
+    var userName = ViewBag.UserName as string;
+}
+
+<div class="container" style="max-width: 800px; margin-top: 20px;">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">💬 Live Chat</h4>
+            <small id="connectionStatus">Đang kết nối...</small>
+        </div>
+
+        <div class="card-body">
+            <!-- Khung chat -->
+            <div id="chatWindow" style="height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 15px; margin-bottom: 15px;">
+                <!-- Tin nhắn sẽ hiển thị ở đây -->
+                <div class="text-center text-muted" id="emptyChat">
+                    👋 Chào mừng bạn đến với chat!
+                </div>
+            </div>
+
+            <!-- Form nhập tin nhắn -->
+            <div class="input-group">
+                <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn của bạn..." autocomplete="off">
+                <div class="input-group-append">
+                    <button id="sendButton" class="btn btn-primary" type="button">
+                        <i class="fas fa-paper-plane"></i> Gửi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thông tin user -->
+            <div class="mt-2 text-muted small">
+                <i class="fas fa-user"></i> Bạn đang chat với tên:
+                <span id="userNameDisplay" class="badge badge-info">@userName</span>
+                <button id="changeName" class="btn btn-sm btn-outline-secondary ml-2">Đổi tên</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+@section scripts {
+    <script src="~/Scripts/jquery-3.6.0.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+
+    <script>
+        $(function () {
+            // Khai báo biến
+            var chat = $.connection.chatHub;
+            var userName = '@userName';
+            var isConnected = false;
+
+            // ===== 1. Định nghĩa các hàm nhận tin từ server =====
+
+            // Nhận tin nhắn mới
+            chat.client.receiveMessage = function (senderName, message, timestamp) {
+                showMessage(senderName, message, timestamp || new Date());
+            };
+
+            // Thông báo có người tham gia
+            chat.client.userJoined = function (name) {
+                showSystemMessage(name + " đã tham gia phòng chat");
+            };
+
+            // Thông báo có người rời đi
+            chat.client.userLeft = function (name) {
+                showSystemMessage(name + " đã rời khỏi phòng chat");
+            };
+
+            // ===== 2. Các hàm hiển thị =====
+
+            function showMessage(sender, text, time) {
+                $('#emptyChat').remove();
+
+                var isMe = (sender === userName);
+                var timeStr = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                var messageHtml = `
+                    <div class="message d-flex ${isMe ? 'justify-content-end' : ''} mb-2">
+                        <div class="${isMe ? 'bg-primary text-white' : 'bg-light'} rounded p-2" style="max-width: 70%;">
+                            <div class="font-weight-bold">${sender}</div>
+                            <div>${escapeHtml(text)}</div>
+                            <div class="text-${isMe ? 'white-50' : 'muted'} small" style="font-size: 0.75em;">${timeStr}</div>
+                        </div>
+                    </div>
+                `;
+
+                $('#chatWindow').append(messageHtml);
+                scrollToBottom();
+            }
+
+            function showSystemMessage(text) {
+                $('#emptyChat').remove();
+
+                var html = `<div class="text-center text-muted small my-2">${text}</div>`;
+                $('#chatWindow').append(html);
+                scrollToBottom();
+            }
+
+            function escapeHtml(text) {
+                var div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function scrollToBottom() {
+                var chatWindow = $('#chatWindow')[0];
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            // ===== 3. Xử lý kết nối =====
+
+            $.connection.hub.start()
+                .done(function () {
+                    isConnected = true;
+                    $('#connectionStatus').html('✅ Đã kết nối');
+                    console.log('SignalR connected. User:', userName);
+
+                    // Thông báo tham gia
+                    chat.server.userJoined(userName);
+                })
+                .fail(function (err) {
+                    $('#connectionStatus').html('❌ Lỗi kết nối');
+                    console.error('SignalR connection error:', err);
+                });
+
+            // ===== 4. Xử lý sự kiện =====
+
+            // Gửi tin nhắn
+            $('#sendButton').click(sendMessage);
+            $('#messageInput').keypress(function (e) {
+                if (e.which === 13 && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                if (!isConnected) {
+                    alert('Chưa kết nối đến server. Vui lòng thử lại!');
+                    return;
+                }
+
+                var message = $('#messageInput').val().trim();
+                if (!message) return;
+
+                // Gửi lên server
+                chat.server.send(userName, message);
+
+                // Xóa input
+                $('#messageInput').val('').focus();
+            }
+
+            // Đổi tên
+            $('#changeName').click(function () {
+                var newName = prompt('Nhập tên mới:', userName);
+                if (newName && newName.trim()) {
+                    var oldName = userName;
+                    userName = newName.trim();
+                    $('#userNameDisplay').text(userName);
+                    showSystemMessage(`Bạn đã đổi tên từ "${oldName}" thành "${userName}"`);
+                }
+            });
+
+            // Xử lý khi đóng tab/trang
+            $(window).on('beforeunload', function () {
+                if (isConnected) {
+                    chat.server.userLeft(userName);
+                }
+            });
+        });
+    </script>
+}

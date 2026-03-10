@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="2b9a423e4adf477a8dcd477f022b21bc" Name="Diagram1">
+        <EntityTypeShape EntityType="EvolStoreModel.ChiTietDonHang" Width="1.5" PointX="5.25" PointY="4.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.DanhGia" Width="1.5" PointX="8.25" PointY="4.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.DonHang" Width="1.5" PointX="3" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.KhachHang" Width="1.5" PointX="0.75" PointY="8.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.KhoHang" Width="1.5" PointX="5.25" PointY="11.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.NhaCungCap" Width="1.5" PointX="0.75" PointY="5" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.NhanVien" Width="1.5" PointX="0.75" PointY="12.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.SanPham" Width="1.5" PointX="3" PointY="4.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.TaiKhoan" Width="1.5" PointX="3" PointY="9.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EvolStoreModel.ThanhToan" Width="1.5" PointX="5.25" PointY="1.125" IsExpanded="true" />
+        <AssociationConnector Association="EvolStoreModel.FK__ChiTietDon__MaDH__5441852A" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__ChiTietDon__MaSP__5535A963" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__DanhGia__MaKH__59063A47" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__DanhGia__MaSP__5812160E" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__DonHang__MaKH__5165187F" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__ThanhToan__MaDH__5CD6CB2B" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__TaiKhoan__MaKH__6754599E" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__KhoHang__MaSP__619B8048" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__SanPham__MaNCC__4E88ABD4" ManuallyRouted="false" />
+        <AssociationConnector Association="EvolStoreModel.FK__TaiKhoan__MaNV__68487DD7" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="EvolStoreModel.NguoiNhan" Width="1.5" PointX="5.25" PointY="14.25" />
+        <AssociationConnector Association="EvolStoreModel.FK_NguoiNhan_DonHang" />
+        <EntityTypeShape EntityType="EvolStoreModel.GiamGia" Width="1.5" PointX="5.25" PointY="8" />
+        <AssociationConnector Association="EvolStoreModel.FK_GiamGia_SanPham" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

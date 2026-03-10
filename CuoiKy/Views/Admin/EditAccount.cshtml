@@ -1,0 +1,386 @@
+﻿@model CuoiKy.Models.TaiKhoan
+@{
+    Layout = null;
+    // Lấy Vai trò từ Session và khai báo biến isAdmin
+    var userRole = Session["AdminRole"] as string;
+    var isAdmin = userRole == "Admin";
+    var isNhanVien = userRole == "NhanVien";
+    var isNhanVienKho = userRole == "NhanVienKho";
+    // Biến để gộp Admin và Nhân viên thường (những người có toàn quyền)
+    var isFullAccessNhanVien = isAdmin || isNhanVien;
+    var khachHangList = ViewBag.KhachHangList as List<CuoiKy.Models.KhachHang>;
+    var nhanVienList = ViewBag.NhanVienList as List<CuoiKy.Models.NhanVien>;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sửa Tài khoản - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* CSS giống AddAccount.cshtml */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 25px;
+                color: #bdc3c7;
+                text-decoration: none;
+                transition: all 0.3s;
+            }
+
+                .nav-links a:hover,
+                .nav-links a.active {
+                    background: #34495e;
+                    color: white;
+                    border-left: 4px solid var(--primary);
+                }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .field-validation-error {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .validation-summary-errors {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .text-muted {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .user-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+            .user-selection select {
+                margin-bottom: 10px;
+            }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Reports")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Reports" || ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Thống kê & Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("RevenueByDate")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Doanh thu theo ngày</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Orders")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Orders" || ViewContext.RouteData.Values["Action"].ToString() == "OrderDetails" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quản lý Đơn hàng</span>
+                    </a>
+                </li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" || ViewContext.RouteData.Values["Action"].ToString() == "AddProduct" || ViewContext.RouteData.Values["Action"].ToString() == "EditProduct" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Customers")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Customers" || ViewContext.RouteData.Values["Action"].ToString() == "AddCustomer" || ViewContext.RouteData.Values["Action"].ToString() == "EditCustomer" ? "active" : "")">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý Khách hàng</span>
+                    </a>
+                </li>
+            }
+
+            @if (isAdmin)
+            {
+                <li>
+                    <a href="@Url.Action("Employees")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Employees" || ViewContext.RouteData.Values["Action"].ToString() == "AddEmployee" || ViewContext.RouteData.Values["Action"].ToString() == "EditEmployee" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Quản lý Nhân viên</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Accounts")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Accounts" || ViewContext.RouteData.Values["Action"].ToString() == "AddAccount" || ViewContext.RouteData.Values["Action"].ToString() == "EditAccount" ? "active" : "")">
+                        <i class="fas fa-user-lock"></i>
+                        <span>Quản lý Tài khoản</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Sales")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Sales" ? "active" : "")">
+                        <i class="fas fa-tags"></i>
+                        <span>Quản lý Giảm giá</span>
+                    </a>
+                </li>
+            }
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Sửa Tài khoản</h1>
+            <div class="user-info">
+                <a href="@Url.Action("Accounts")" class="btn btn-danger">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+        </div>
+
+        <div class="form-container">
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.MaTK)
+
+                @Html.ValidationSummary(true, "", new { @class = "validation-summary-errors" })
+
+                <div class="form-group">
+                    <label>Tên đăng nhập *</label>
+                    @Html.TextBoxFor(m => m.TenDangNhap, new
+                    {
+                        @class = "form-control",
+                        placeholder = "Nhập tên đăng nhập",
+                        required = "required"
+                    })
+                    @Html.ValidationMessageFor(m => m.TenDangNhap)
+                </div>
+
+                <div class="form-group">
+                    <label>Mật khẩu mới</label>
+                    <input type="password" name="newPassword" class="form-control" placeholder="Để trống nếu không đổi mật khẩu" />
+                    <small class="text-muted">Chỉ nhập nếu muốn thay đổi mật khẩu</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Vai trò *</label>
+                    @Html.DropDownListFor(m => m.VaiTro, new SelectList(new[]
+                    {
+                        new SelectListItem { Value = "KhachHang", Text = "Khách hàng" },
+                        new SelectListItem { Value = "NhanVien", Text = "Nhân viên" },
+                        new SelectListItem { Value = "NhanVienKho", Text = "Nhân viên Kho" },
+                        new SelectListItem { Value = "Admin", Text = "Admin" }
+                    }, "Value", "Text"), "Chọn vai trò", new { @class = "form-control", required = "required" })
+                    @Html.ValidationMessageFor(m => m.VaiTro)
+                </div>
+
+                <div class="user-selection">
+                    <div>
+                        <label>Chọn Khách hàng</label>
+                        @Html.DropDownListFor(m => m.MaKH, new SelectList(khachHangList, "MaKH", "HoTen"), "Chọn khách hàng", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.MaKH)
+                    </div>
+
+                    <div>
+                        <label>Chọn Nhân viên</label>
+                        @Html.DropDownListFor(m => m.MaNV, new SelectList(nhanVienList, "MaNV", "HoTen"), "Chọn nhân viên", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.MaNV)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Trạng thái</label>
+                    @Html.DropDownListFor(m => m.TrangThai, new SelectList(new[]
+                    {
+                        new SelectListItem { Value = "true", Text = "Đang hoạt động" },
+                        new SelectListItem { Value = "false", Text = "Đã khóa" }
+                    }, "Value", "Text"), new { @class = "form-control" })
+                </div>
+
+                <div class="btn-group">
+                    <a href="@Url.Action("Accounts")" class="btn btn-danger">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Cập nhật tài khoản
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const maKH = document.getElementById('MaKH');
+            const maNV = document.getElementById('MaNV');
+            const vaiTro = document.getElementById('VaiTro');
+
+            // Khi thay đổi vai trò, enable/disable các dropdown tương ứng
+            vaiTro.addEventListener('change', function () {
+                if (this.value === 'KhachHang') {
+                    maKH.disabled = false;
+                    maNV.disabled = true;
+                    maNV.value = '';
+                } else if (this.value === 'NhanVien') {
+                    maKH.disabled = true;
+                    maNV.disabled = false;
+                    maKH.value = '';
+                } else {
+                    maKH.disabled = false;
+                    maNV.disabled = false;
+                }
+            });
+
+            // Khởi tạo trạng thái ban đầu
+            vaiTro.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>

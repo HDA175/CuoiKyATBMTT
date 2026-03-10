@@ -1,0 +1,1228 @@
+﻿﻿@model IEnumerable<CuoiKy.Models.DonHang>
+@using CuoiKy.Models
+@{
+    Layout = null;
+    ViewBag.Title = "Tài Khoản Của Tôi";
+
+    // Lấy dữ liệu từ ViewBag và cast đúng kiểu
+    var recentOrders = ViewBag.RecentOrders as List<CuoiKy.Controllers.RecentOrderViewModel>;
+    var tenKhachHang = ViewBag.TenKhachHang as string;
+    var orderCount = ViewBag.OrderCount as int? ?? 0;
+    var pendingOrders = ViewBag.PendingOrders as int? ?? 0;
+    var shippingOrders = ViewBag.ShippingOrders as int? ?? 0;
+    var completedOrders = ViewBag.CompletedOrders as int? ?? 0;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Khoản Của Tôi - EvolStore</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* ===========================
+           RESET & VARIABLES
+           =========================== */
+        :root {
+            --header-height: 110px;
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #333;
+            --muted: #7f8c8d;
+            --page-bg: #f8f9fa;
+            --border: #e0e0e0;
+            --light-bg: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--page-bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        /* ===========================
+           HEADER
+           =========================== */
+        .header-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(0,0,0,.9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 10%;
+            transition: .3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,.12);
+        }
+
+            .header-top.scrolled {
+                padding: 12px 10%;
+                background: rgba(0,0,0,.95);
+            }
+
+            .header-top .logo img {
+                width: 200px;
+                border-radius: 12px;
+                transition: .25s ease;
+            }
+
+            .header-top.scrolled .logo img {
+                width: 160px;
+            }
+
+        .user-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+            .user-actions a {
+                text-decoration: none;
+                color: #fff;
+                font-weight: 600;
+                padding: 10px 15px;
+                border-radius: 8px;
+                transition: .25s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                position: relative;
+            }
+
+                .user-actions a:hover {
+                    background: rgba(255,255,255,.15);
+                    color: #a8e6cf;
+                    transform: translateY(-2px);
+                }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* ===========================
+           SEARCH
+           =========================== */
+        .search-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,.1);
+            border-radius: 30px;
+            padding: 8px 15px;
+            transition: all .35s ease;
+            width: 50px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+            .search-box.active {
+                width: 280px;
+                background: rgba(255,255,255,.15);
+                cursor: text;
+                border-color: rgba(255,255,255,.3);
+            }
+
+        .search-icon {
+            color: #fff;
+            font-size: 18px;
+            transition: .25s ease;
+            flex-shrink: 0;
+        }
+
+        .search-box:hover .search-icon {
+            color: #a8e6cf;
+            transform: scale(1.1);
+        }
+
+        .search-box.active .search-icon {
+            color: #a8e6cf;
+        }
+
+        .search-input {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            color: #fff;
+            font-size: 15px;
+            padding: 8px 12px;
+            width: 0;
+            opacity: 0;
+            transition: .25s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+            .search-input::placeholder {
+                color: rgba(255,255,255,.7);
+            }
+
+        .search-box.active .search-input {
+            width: 100%;
+            opacity: 1;
+        }
+
+        /* ===========================
+           LAYOUT CHÍNH
+           =========================== */
+        .main-content {
+            margin-top: var(--header-height);
+            padding: 40px 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* CSS cho dropdown menu */
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+            .user-info:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: rgb(190, 230, 228);
+            }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+            margin-left: auto;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 200px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            padding: 8px 0;
+            display: block !important;
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: black !important;
+            font-size: 14px;
+            font-weight: normal;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f8f9fa;
+                color: #007bff;
+            }
+
+            .dropdown-item i {
+                width: 16px;
+                text-align: center;
+                font-size: 14px;
+            }
+
+        .logout-item {
+            color: black !important;
+        }
+
+            .logout-item:hover {
+                background-color: #fff5f5 !important;
+                color: #dc3545 !important;
+            }
+
+        /* Account Page Styles */
+        .account-page {
+            padding: 30px 0;
+            background: linear-gradient(135deg, #f3f4f6, #ffffff);
+            min-height: calc(100vh - var(--header-height) - 70px);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #111827;
+
+        }
+
+        /* Sidebar Styles */
+        .account-sidebar {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .account-sidebar:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 25px 60px rgba(15, 23, 42, 0.15);
+            }
+
+        .user-profile {
+            padding: 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #111827, #374151);
+            color: #ffffff;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #111827;
+            font-size: 40px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-profile h4 {
+            margin: 10px 0 5px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .user-profile p {
+            font-size: 14px;
+            opacity: 0.9;
+            color: #d1d5db;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+        }
+
+            .sidebar-menu li {
+                margin: 0;
+                border-bottom: 1px solid #f3f4f6;
+            }
+
+                .sidebar-menu li:last-child {
+                    border-bottom: none;
+                }
+
+            .sidebar-menu a {
+                display: flex;
+                align-items: center;
+                padding: 16px 25px;
+                color: #4b5563;
+                text-decoration: none;
+                border-left: 4px solid transparent;
+                transition: all 0.3s ease;
+                position: relative;
+                background: transparent;
+            }
+
+                .sidebar-menu a i {
+                    width: 25px;
+                    margin-right: 12px;
+                    text-align: center;
+                    font-size: 18px;
+                    color: #6b7280;
+                }
+
+                .sidebar-menu a:hover {
+                    background: #f9fafb;
+                    color: #111827;
+                    border-left-color: #111827;
+                    padding-left: 30px;
+                }
+
+                    .sidebar-menu a:hover i {
+                        color: #111827;
+                    }
+
+                .sidebar-menu a.active {
+                    background: linear-gradient(90deg, rgba(17, 24, 39, 0.08) 0%, rgba(17, 24, 39, 0.04) 100%);
+                    color: #111827;
+                    border-left-color: #111827;
+                    font-weight: 600;
+                }
+
+                    .sidebar-menu a.active i {
+                        color: #111827;
+                    }
+
+        .badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            position: absolute;
+            right: 25px;
+            min-width: 24px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Main Content Styles */
+        .account-content {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+            border: 1px solid #e5e7eb;
+            min-height: 500px;
+        }
+
+        .welcome-section {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+            .welcome-section h2 {
+                color: #111827;
+                font-weight: 800;
+                margin-bottom: 8px;
+                font-size: 28px;
+            }
+
+        .text-muted {
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        /* Dashboard Cards */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+
+            .dashboard-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+                border-color: #d1d5db;
+            }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-content h3 {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-content .number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .card-link {
+            color: #111827;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: gap 0.3s ease, color 0.3s ease;
+        }
+
+            .card-link:hover {
+                gap: 12px;
+                color: #374151;
+            }
+
+            .card-link i {
+                transition: transform 0.3s ease;
+            }
+
+            .card-link:hover i {
+                transform: translateX(3px);
+            }
+
+        /* Recent Orders */
+        .recent-orders {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+            .section-header h3 {
+                color: #111827;
+                font-size: 22px;
+                font-weight: 700;
+                margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+                .section-header h3 i {
+                    color: #111827;
+                }
+
+        .view-all {
+            color: #111827;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 999px;
+            border: 2px solid #111827;
+            background: transparent;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+            .view-all:hover {
+                background: #111827;
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(17, 24, 39, 0.15);
+            }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .orders-table thead {
+                background: #f9fafb;
+            }
+
+            .orders-table th {
+                padding: 18px 16px;
+                text-align: left;
+                font-weight: 700;
+                color: #374151;
+                border-bottom: 2px solid #e5e7eb;
+                white-space: nowrap;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .orders-table td {
+                padding: 18px 16px;
+                border-bottom: 1px solid #f3f4f6;
+                vertical-align: middle;
+                color: #4b5563;
+            }
+
+            .orders-table tbody tr {
+                transition: background-color 0.2s ease;
+            }
+
+                .orders-table tbody tr:hover {
+                    background: #f9fafb;
+                }
+
+                .orders-table tbody tr:last-child td {
+                    border-bottom: none;
+                }
+
+        .order-status {
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+            min-width: 110px;
+            text-align: center;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-completed {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status-shipping {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .status-pending {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .status-cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .status-default {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-view {
+            background: transparent;
+            border: 2px solid #111827;
+            color: #111827;
+            padding: 8px 16px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-view:hover {
+                background: #111827;
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(17, 24, 39, 0.15);
+            }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+            .empty-state i {
+                color: #d1d5db;
+                margin-bottom: 20px;
+                font-size: 48px;
+            }
+
+            .empty-state p {
+                margin-bottom: 25px;
+                font-size: 16px;
+                color: #4b5563;
+            }
+
+        .btn-primary {
+            background: #111827;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 999px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(17, 24, 39, 0.15);
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 16px 35px rgba(17, 24, 39, 0.2);
+                color: white;
+                background: #374151;
+            }
+
+            .btn-primary i {
+                transition: transform 0.3s ease;
+            }
+
+            .btn-primary:hover i {
+                transform: translateX(3px);
+            }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .header-top {
+                padding: 20px 5%;
+            }
+
+                .header-top.scrolled {
+                    padding: 12px 5%;
+                }
+
+                .header-top .logo img {
+                    width: 150px;
+                }
+
+                .header-top.scrolled .logo img {
+                    width: 120px;
+                }
+
+            .user-actions {
+                gap: 10px;
+            }
+
+                .user-actions a {
+                    padding: 8px 12px;
+                    font-size: 14px;
+                }
+
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .orders-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .sidebar-menu a {
+                padding: 14px 20px;
+                font-size: 14px;
+            }
+
+            .user-profile {
+                padding: 25px 15px;
+            }
+
+            .avatar {
+                width: 70px;
+                height: 70px;
+                font-size: 35px;
+            }
+
+            .card-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+                margin-right: 15px;
+            }
+
+            .card-content .number {
+                font-size: 24px;
+            }
+
+            .account-content {
+                padding: 25px 20px;
+            }
+
+            .welcome-section h2 {
+                font-size: 24px;
+            }
+
+            .view-all {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .header-top .logo img {
+                width: 120px;
+            }
+
+            .header-top.scrolled .logo img {
+                width: 100px;
+            }
+
+            .user-info {
+                min-width: auto;
+                padding: 8px 10px;
+            }
+
+            .search-box.active {
+                width: 200px;
+            }
+
+            .account-content {
+                padding: 20px 15px;
+            }
+
+            .welcome-section h2 {
+                font-size: 22px;
+            }
+
+            .dashboard-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .card-icon {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+
+            .card-content h3 {
+                font-size: 13px;
+            }
+
+            .card-content .number {
+                font-size: 22px;
+            }
+
+            .orders-table th,
+            .orders-table td {
+                padding: 14px 12px;
+                font-size: 13px;
+            }
+
+            .btn-view {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .btn-primary {
+                padding: 12px 24px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header-top" id="headerTop">
+        <div class="logo">
+            <a href="@Url.Action("Index", "EvolStore")">
+                <img src="/images/logo.jpg" alt="logo" />
+            </a>
+        </div>
+        <div class="user-actions">
+            <!-- Search Box -->
+            <div class="search-container">
+                <div class="search-box" id="searchBox">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm sản phẩm..."
+                           id="searchInput">
+                </div>
+            </div>
+
+            <!-- Giỏ hàng -->
+            <a href="#" id="cartButton">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>GIỎ HÀNG</span>
+                <span class="cart-count" id="cartCount" style="display: none;">0</span>
+            </a>
+            <!-- Đăng nhập -->
+            @if (Session["TenKhachHang"] != null)
+            {
+                <!-- Phiên bản đã sửa -->
+                <div class="user-dropdown">
+                    <div class="user-info">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <span>Xin chào, @Session["TenKhachHang"]</span>
+                        <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="@Url.Action("Index", "Account")" class="dropdown-item">
+                            <i class="fa-solid fa-user"></i>
+                            <span>Tài khoản của tôi</span>
+                        </a>
+                        <a href="@Url.Action("LogoutGet", "User")" class="dropdown-item logout-item">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Đăng xuất</span>
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- SỬA Ở ĐÂY: Thêm returnUrl vào link đăng nhập -->
+                <a href="@Url.Action("Login", "User", new { returnUrl = Request.Url.PathAndQuery })">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span>ĐĂNG NHẬP</span>
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="account-page">
+            <div class="container">
+                <div class="row">
+                    <!-- Sidebar -->
+                    <div class="col-md-3">
+                        <div class="account-sidebar">
+                            <div class="user-profile">
+                                <div class="avatar">
+                                    <i class="fa fa-user-circle"></i>
+                                </div>
+                                <h4>@tenKhachHang</h4>
+                                <p>@(Session["Email"] as string ?? "Chưa có email")</p>
+                            </div>
+
+                            <ul class="sidebar-menu">
+                                <li>
+                                    <a href="@Url.Action("Index", "Account")" class="active">
+                                        <i class="fa fa-home"></i> Tổng quan
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("Profile", "Account")">
+                                        <i class="fa fa-user"></i> Hồ sơ
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("Orders", "Account")">
+                                        <i class="fa fa-shopping-bag"></i> Đơn hàng
+                                        @if (orderCount > 0)
+                                        {
+                                            <span class="badge">@orderCount</span>
+                                        }
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("ChangePassword", "Account")">
+                                        <i class="fa fa-key"></i> Đổi mật khẩu
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("Logout", "Account")" onclick="return confirm('Bạn có chắc muốn đăng xuất?');">
+                                        <i class="fa fa-sign-out-alt"></i> Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="col-md-9">
+                        <div class="account-content">
+                            <div class="welcome-section">
+                                <h2>Welcome back, @tenKhachHang! 👋</h2>
+                                <p class="text-muted">Quản lý tài khoản và đơn hàng của bạn tại EvolStore</p>
+                            </div>
+
+                            <div class="dashboard-cards">
+                                <div class="dashboard-card">
+                                    <div class="card-icon" style="background: #111827;">
+                                        <i class="fa fa-shopping-cart"></i>
+                                    </div>
+                                    <div class="card-content">
+                                        <h3>Tổng đơn hàng</h3>
+                                        <p class="number">@orderCount</p>
+                                        <a href="@Url.Action("Orders", "Account")" class="card-link">Xem tất cả <i class="fa fa-arrow-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <div class="dashboard-card">
+                                    <div class="card-icon" style="background: #374151;">
+                                        <i class="fa fa-clock"></i>
+                                    </div>
+                                    <div class="card-content">
+                                        <h3>Chờ xử lý</h3>
+                                        <p class="number">@pendingOrders</p>
+                                        <a href="@Url.Action("Orders", "Account")" class="card-link">Xem chi tiết <i class="fa fa-arrow-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <div class="dashboard-card">
+                                    <div class="card-icon" style="background: #4B5563;">
+                                        <i class="fa fa-truck"></i>
+                                    </div>
+                                    <div class="card-content">
+                                        <h3>Đang giao</h3>
+                                        <p class="number">@shippingOrders</p>
+                                        <a href="@Url.Action("Orders", "Account")" class="card-link">Theo dõi <i class="fa fa-arrow-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <div class="dashboard-card">
+                                    <div class="card-icon" style="background: #6B7280;">
+                                        <i class="fa fa-check-circle"></i>
+                                    </div>
+                                    <div class="card-content">
+                                        <h3>Hoàn thành</h3>
+                                        <p class="number">@completedOrders</p>
+                                        <a href="@Url.Action("Orders", "Account")" class="card-link">Xem lịch sử <i class="fa fa-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="recent-orders">
+                                <div class="section-header">
+                                    <h3><i class="fa fa-history"></i> Đơn hàng gần đây</h3>
+                                    <a href="@Url.Action("Orders", "Account")" class="view-all">Xem tất cả</a>
+                                </div>
+
+                                @if (recentOrders != null && recentOrders.Count > 0)
+                                {
+                                    <div class="table-responsive">
+                                        <table class="orders-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã đơn</th>
+                                                    <th>Ngày đặt</th>
+                                                    <th>Số lượng</th>
+                                                    <th>Tổng tiền</th>
+                                                    <th>Trạng thái</th>
+                                                    <th>Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var order in recentOrders)
+                                                {
+                                                    <tr>
+                                                        <td><strong>#@order.MaDH</strong></td>
+                                                        <td>@(order.NgayDat?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                                                        <td>@(order.SoLuong?.ToString() ?? "0") sản phẩm</td>
+                                                        <td>@string.Format("{0:N0} đ", order.TongTien ?? 0)</td>
+                                                        <td>
+                                                            <span class="order-status @GetStatusClass(order.TrangThai)">@order.TrangThai</span>
+                                                        </td>
+                                                        <td>
+                                                            <a href="@Url.Action("OrderDetail", "Account", new { id = order.MaDH })"
+                                                               class="btn-view">
+                                                                <i class="fa fa-eye"></i> Chi tiết
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="empty-state">
+                                        <i class="fa fa-shopping-cart fa-3x"></i>
+                                        <p>Bạn chưa có đơn hàng nào</p>
+                                        <a href="@Url.Action("Index", "EvolStore")" class="btn-primary">
+                                            <i class="fa fa-shopping-cart"></i> Mua sắm ngay
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    @Html.Action("FooterPartial", "EvolStore")
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ===========================
+        // KHỞI TẠO TRANG
+        // ===========================
+        document.addEventListener('DOMContentLoaded', function () {
+            // Header co lại khi cuộn
+            window.addEventListener('scroll', function () {
+                const headerTop = document.getElementById('headerTop');
+                if (window.scrollY > 50) headerTop.classList.add('scrolled');
+                else headerTop.classList.remove('scrolled');
+            });
+
+            // Menu active
+            var currentUrl = window.location.pathname.toLowerCase();
+            var menuLinks = document.querySelectorAll('.sidebar-menu a');
+
+            menuLinks.forEach(function (link) {
+                var linkUrl = link.getAttribute('href').toLowerCase();
+
+                // Kiểm tra nếu URL trùng với currentUrl
+                if (currentUrl.includes(linkUrl) && linkUrl !== '/account') {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+
+            // Đảm bảo luôn có một item active
+            if (!document.querySelector('.sidebar-menu a.active')) {
+                var homeLink = document.querySelector('.sidebar-menu a[href*="Index"]');
+                if (homeLink) {
+                    homeLink.classList.add('active');
+                }
+            }
+
+            // Thêm hiệu ứng hover cho dashboard cards
+            const dashboardCards = document.querySelectorAll('.dashboard-card');
+            dashboardCards.forEach(card => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 20px 40px rgba(15, 23, 42, 0.15)';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 10px 30px rgba(15, 23, 42, 0.1)';
+                });
+            });
+        });
+
+        // ===========================
+        // TÌM KIẾM
+        // ===========================
+        const searchBox = document.getElementById('searchBox');
+        const searchInput = document.getElementById('searchInput');
+
+        if (searchBox && searchInput) {
+            searchBox.addEventListener('click', function (e) {
+                e.stopPropagation();
+                searchBox.classList.add('active');
+                searchInput.focus();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!searchBox.contains(e.target) && searchInput.value.trim() === '') {
+                    searchBox.classList.remove('active');
+                }
+            });
+
+            searchInput.addEventListener('input', function () {
+                if (this.value !== '') searchBox.classList.add('active');
+            });
+
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    const q = this.value.trim();
+                    if (q) {
+                        window.location.href = '@Url.Action("CuaHang", "EvolStore")?search=' + encodeURIComponent(q);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
+@functions {
+    public string GetStatusClass(string status)
+    {
+        if (string.IsNullOrEmpty(status))
+            return "status-default";
+
+        switch (status.ToLower())
+        {
+            case "hoàn thành":
+                return "status-completed";
+            case "đang giao":
+                return "status-shipping";
+            case "chờ xử lý":
+                return "status-pending";
+            case "đã hủy":
+                return "status-cancelled";
+            default:
+                return "status-default";
+        }
+    }
+}

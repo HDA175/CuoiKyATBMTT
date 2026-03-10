@@ -1,0 +1,252 @@
+﻿@{
+    ViewBag.Title = "Chat nhân viên hỗ trợ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-headset"></i> NHÂN VIÊN HỖ TRỢ
+                <span id="statusBadge" class="badge badge-light float-right">Chưa kết nối</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="row no-gutters">
+                <!-- Danh sách user -->
+                <div class="col-md-4 border-right">
+                    <div class="p-3">
+                        <h6><i class="fas fa-users"></i> Khách đang chờ</h6>
+                        <div id="userList" style="min-height: 200px; max-height: 300px; overflow-y: auto;">
+                            <div class="text-center text-muted pt-4">
+                                <p>Không có khách nào</p>
+                            </div>
+                        </div>
+                        <button id="acceptBtn" class="btn btn-primary btn-sm btn-block mt-2" disabled>
+                            <i class="fas fa-check"></i> Chấp nhận
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Khung chat -->
+                <div class="col-md-8">
+                    <div style="height: 400px; display: flex; flex-direction: column;">
+                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Chat với: <span id="currentUser" class="text-primary">[Chưa chọn]</span></h6>
+                            <button id="closeBtn" class="btn btn-sm btn-outline-danger" disabled>
+                                <i class="fas fa-times"></i> Đóng chat
+                            </button>
+                        </div>
+
+                        <div id="chatWindow" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa;">
+                            <div class="text-center text-muted pt-5">
+                                <p>Chọn một khách hàng để bắt đầu chat</p>
+                            </div>
+                        </div>
+
+                        <div class="p-3 border-top">
+                            <div class="input-group">
+                                <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn..." disabled>
+                                <div class="input-group-append">
+                                    <button id="sendBtn" class="btn btn-primary" disabled>
+                                        <i class="fas fa-paper-plane"></i> Gửi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+    <script src="/signalr/hubs"></script>
+
+    <script>
+        $(function () {
+            var chatHub = $.connection.chatHub;
+            var selectedUserId = null;
+            var selectedUserName = null;
+
+            // Hiển thị tin nhắn
+            function addMessage(content, side) {
+                var html = '<div class="message-' + side + '">' +
+                    $('<div/>').text(content).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            // Hiển thị tin nhắn hệ thống
+            function addSystemMessage(message) {
+                var html = '<div class="message-center">' +
+                    $('<div/>').text(message).html() +
+                    '</div>';
+                $('#chatWindow').append(html);
+                $('#chatWindow').scrollTop($('#chatWindow')[0].scrollHeight);
+            }
+
+            // Nhận tin nhắn từ khách
+            chatHub.client.receiveUserMessage = function (userName, message) {
+                if (selectedUserName === userName) {
+                    addMessage(userName + ': ' + message, 'left');
+                }
+            };
+
+            // Nhận tin nhắn (echo)
+            chatHub.client.receiveMessage = function (sender, message) {
+                addMessage(sender + ': ' + message, 'right');
+            };
+
+            // Nhận tin hệ thống
+            chatHub.client.receiveSystemMessage = function (message) {
+                addSystemMessage(message);
+            };
+
+            // Cập nhật danh sách khách
+            chatHub.client.receiveWaitingUsers = function (users) {
+                var container = $('#userList');
+                container.empty();
+
+                if (!users || users.length === 0) {
+                    container.html('<div class="text-center text-muted pt-4"><p>Không có khách nào</p></div>');
+                    return;
+                }
+
+                users.forEach(function (user) {
+                    var isSelected = (user.ConnectionId === selectedUserId) ? 'bg-light' : '';
+                    var html = `
+                            <div class="user-item p-2 border-bottom ${isSelected}"
+                                 data-id="${user.ConnectionId}"
+                                 data-name="${user.UserName}"
+                                 style="cursor: pointer;">
+                                <i class="fas fa-user mr-2"></i>
+                                <strong>${user.UserName}</strong>
+                            </div>`;
+                    container.append(html);
+                });
+
+                // Chọn khách
+                $('.user-item').click(function () {
+                    $('.user-item').removeClass('bg-light');
+                    $(this).addClass('bg-light');
+
+                    selectedUserId = $(this).data('id');
+                    selectedUserName = $(this).data('name');
+
+                    $('#currentUser').text(selectedUserName);
+                    $('#acceptBtn').prop('disabled', false);
+                    $('#closeBtn').prop('disabled', false);
+                    $('#messageInput').prop('disabled', false);
+                    $('#sendBtn').prop('disabled', false);
+
+                    $('#chatWindow').html('<div class="text-center text-muted pt-5"><p>Bắt đầu chat với ' + selectedUserName + '</p></div>');
+                    $('#messageInput').focus();
+                });
+            };
+
+            // Kết nối hub
+            $.connection.hub.start().done(function () {
+                $('#statusBadge').text('Online').removeClass('badge-light').addClass('badge-success');
+                chatHub.server.staffLogin('Nhân viên');
+
+                // Chấp nhận hỗ trợ
+                $('#acceptBtn').click(function () {
+                    if (!selectedUserId) return;
+                    chatHub.server.staffAcceptUser(selectedUserId);
+                    addSystemMessage("Đã kết nối với " + selectedUserName);
+                });
+
+                // Đóng chat
+                $('#closeBtn').click(function () {
+                    if (!selectedUserId) return;
+                    chatHub.server.staffCloseChat(selectedUserId);
+                    selectedUserId = null;
+                    selectedUserName = null;
+                    $('#currentUser').text('[Chưa chọn]');
+                    $('#acceptBtn').prop('disabled', true);
+                    $('#closeBtn').prop('disabled', true);
+                    $('#messageInput').prop('disabled', true);
+                    $('#sendBtn').prop('disabled', true);
+                    $('#chatWindow').html('<div class="text-center text-muted pt-5"><p>Chọn một khách hàng để bắt đầu chat</p></div>');
+                });
+
+                // Gửi tin nhắn
+                $('#sendBtn').click(function () {
+                    var msg = $('#messageInput').val().trim();
+                    if (!msg || !selectedUserId) return;
+
+                    chatHub.server.staffSendToUser(selectedUserId, msg);
+                    $('#messageInput').val('').focus();
+                });
+
+                // Enter để gửi
+                $('#messageInput').keypress(function (e) {
+                    if (e.which === 13) $('#sendBtn').click();
+                });
+
+            }).fail(function (err) {
+                $('#statusBadge').text('Offline').removeClass('badge-light').addClass('badge-danger');
+            });
+        });
+    </script>
+
+    <style>
+        .message-left {
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            max-width: 70%;
+            float: left;
+            clear: both;
+        }
+
+        .message-right {
+            background: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            max-width: 70%;
+            float: right;
+            clear: both;
+        }
+
+        .message-center {
+            background: #fff3cd;
+            color: #856404;
+            padding: 5px 8px;
+            border-radius: 5px;
+            margin: 5px auto;
+            text-align: center;
+            max-width: 90%;
+            clear: both;
+            font-size: 0.85em;
+        }
+
+        .user-item:hover {
+            background-color: #f8f9fa !important;
+        }
+
+        .user-item.bg-light {
+            border-left: 3px solid #007bff !important;
+        }
+
+        #chatWindow::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #chatWindow::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        #chatWindow::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+    </style>
+}

@@ -1,0 +1,1575 @@
+﻿@model List<CuoiKy.Models.SanPham>
+@using CuoiKy.Models
+
+@{
+    Layout = null;
+    var userRole = Session["AdminRole"] as string;
+    var isAdmin = userRole == "Admin";
+    var isNhanVienKho = userRole == "NhanVienKho";
+    var isNhanVien = userRole == "NhanVien";
+    var isFullAccessNhanVien = isAdmin || isNhanVien;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Giảm giá - EvolStore Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --info: #9b59b6;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            background: #f5f6fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+            .logo h2 {
+                color: white;
+                font-size: 1.5rem;
+            }
+
+        .nav-links {
+            padding: 20px 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 78px);
+        }
+
+            .nav-links li {
+                width: 100%;
+            }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 25px;
+                color: #bdc3c7;
+                text-decoration: none;
+                transition: all 0.3s;
+            }
+
+                .nav-links a:hover,
+                .nav-links a.active {
+                    background: #34495e;
+                    color: white;
+                    border-left: 4px solid var(--primary);
+                }
+
+                .nav-links a i {
+                    margin-right: 10px;
+                    width: 20px;
+                    text-align: center;
+                }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+            .header h1 {
+                color: var(--dark);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn-info {
+            background: var(--info);
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 13px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .table-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+        }
+
+            .table-header h3 {
+                color: var(--dark);
+                margin: 0;
+            }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .data-table th {
+                background: #f8f9fa;
+                font-weight: 600;
+                color: var(--dark);
+                padding: 15px;
+                text-align: left;
+                border-bottom: 2px solid #eee;
+                white-space: nowrap;
+            }
+
+            .data-table td {
+                padding: 15px;
+                border-bottom: 1px solid #eee;
+                vertical-align: middle;
+            }
+
+            .data-table tr:hover {
+                background: #f8f9fa;
+            }
+
+            .data-table tr.expiring {
+                background: #fff8e1;
+            }
+
+                .data-table tr.expiring:hover {
+                    background: #ffecb3;
+                }
+
+        .status-sale {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-block;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .status-none {
+            background: #95a5a6;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .status-expiring {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-block;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .discount-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 100px;
+        }
+
+            .form-group label {
+                font-size: 12px;
+                color: #666;
+                font-weight: 500;
+            }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+            .form-control:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+
+        .form-control-small {
+            width: 80px;
+        }
+
+        .form-control-medium {
+            width: 120px;
+        }
+
+        .date-input {
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .actions-cell {
+            min-width: 300px;
+        }
+
+        .price-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .price-old {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .price-new {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .price-save {
+            color: var(--success);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .discount-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @@keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-title {
+            color: var(--dark);
+            font-size: 1.5rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+            .modal-close:hover {
+                background: #f5f5f5;
+                color: var(--danger);
+            }
+
+        .modal-body {
+            margin-bottom: 25px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        /* Alert Message Style */
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--primary);
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .icon-btn:hover {
+                background: rgba(52, 152, 219, 0.1);
+            }
+
+            .icon-btn.text-danger {
+                color: var(--danger);
+            }
+
+                .icon-btn.text-danger:hover {
+                    background: rgba(231, 76, 60, 0.1);
+                }
+
+            .icon-btn.text-success {
+                color: var(--success);
+            }
+
+                .icon-btn.text-success:hover {
+                    background: rgba(46, 204, 113, 0.1);
+                }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+            .form-checkbox input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+            }
+
+            .form-checkbox label {
+                cursor: pointer;
+                user-select: none;
+            }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .filter-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
+        .badge-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .badge-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .badge-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .page-btn {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .page-btn:hover {
+                background: #f5f5f5;
+            }
+
+            .page-btn.active {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-danger {
+            color: var(--danger);
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
+        .text-warning {
+            color: var(--warning);
+        }
+
+        .mb-3 {
+            margin-bottom: 15px;
+        }
+
+        .mt-3 {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-store"></i> EvolStore Admin</h2>
+        </div>
+
+        <ul class="sidebar-menu nav-links">
+            <li>
+                <a href="@Url.Action("Dashboard")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            @if (isAdmin || isNhanVienKho)
+            {
+                <li>
+                    <a href="@Url.Action("WarehouseManager")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "WarehouseManager" ? "active" : "")">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Quản lý Kho</span>
+                    </a>
+                </li>
+            }
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Reports")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Reports" || ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Thống kê & Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("RevenueByDate")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "RevenueByDate" ? "active" : "")">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Doanh thu theo ngày</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Orders")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Orders" || ViewContext.RouteData.Values["Action"].ToString() == "OrderDetails" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quản lý Đơn hàng</span>
+                    </a>
+                </li>
+            }
+
+            <li>
+                <a href="@Url.Action("Products")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Products" || ViewContext.RouteData.Values["Action"].ToString() == "AddProduct" || ViewContext.RouteData.Values["Action"].ToString() == "EditProduct" ? "active" : "")">
+                    <i class="fas fa-box-open"></i>
+                    <span>Quản lý Sản phẩm</span>
+                </a>
+            </li>
+
+            @if (isFullAccessNhanVien)
+            {
+                <li>
+                    <a href="@Url.Action("Customers")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Customers" || ViewContext.RouteData.Values["Action"].ToString() == "AddCustomer" || ViewContext.RouteData.Values["Action"].ToString() == "EditCustomer" ? "active" : "")">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý Khách hàng</span>
+                    </a>
+                </li>
+            }
+
+            @if (isAdmin)
+            {
+                <li>
+                    <a href="@Url.Action("Employees")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Employees" || ViewContext.RouteData.Values["Action"].ToString() == "AddEmployee" || ViewContext.RouteData.Values["Action"].ToString() == "EditEmployee" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Quản lý Nhân viên</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Accounts")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Accounts" || ViewContext.RouteData.Values["Action"].ToString() == "AddAccount" || ViewContext.RouteData.Values["Action"].ToString() == "EditAccount" ? "active" : "")">
+                        <i class="fas fa-user-lock"></i>
+                        <span>Quản lý Tài khoản</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Sales")" class="@(ViewContext.RouteData.Values["Action"].ToString() == "Sales" ? "active" : "")">
+                        <i class="fas fa-tags"></i>
+                        <span>Quản lý Giảm giá</span>
+                    </a>
+                </li>
+            }
+            <li style="margin-top: auto;">
+                <a href="@Url.Action("Logout")" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1><i class="fas fa-tags"></i> Quản lý Giảm giá Sản phẩm</h1>
+            <div class="user-info">
+                <span>Xin chào, <strong>@Session["AdminUsername"]</strong></span>
+                <a href="@Url.Action("Logout")" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+
+        <!-- Thông báo -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <!-- Thống kê -->
+        @{
+            var now = DateTime.Now;
+            var productsWithDiscount = Model.Count(p => p.GiamGias.Any(g =>
+                g.NgayBatDau <= now && (g.NgayKetThuc == null || g.NgayKetThuc >= now) && g.PhanTramGiam > 0));
+            var expiringDiscounts = Model.Count(p => p.GiamGias.Any(g =>
+                g.NgayKetThuc != null && g.NgayKetThuc <= now.AddDays(7) && g.NgayKetThuc >= now));
+            var totalDiscountValue = Model.Sum(p =>
+            {
+                var discount = p.GiamGias.FirstOrDefault(g =>
+                    g.NgayBatDau <= now && (g.NgayKetThuc == null || g.NgayKetThuc >= now));
+                if (discount != null && discount.PhanTramGiam > 0)
+                {
+                    var giaGoc = p.Gia / (1 - discount.PhanTramGiam);
+                    return giaGoc * discount.PhanTramGiam;
+                }
+                return 0;
+            });
+        }
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.Count</div>
+                    <div class="stat-label">Tổng sản phẩm</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">
+                    <i class="fas fa-percent"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@productsWithDiscount</div>
+                    <div class="stat-label">Đang giảm giá</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f39c12, #d35400);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@expiringDiscounts</div>
+                    <div class="stat-label">Sắp hết hạn</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@totalDiscountValue.ToString("N0") ₫</div>
+                    <div class="stat-label">Tổng giá trị giảm</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bộ lọc -->
+        <div class="filter-container">
+            <div class="filter-group">
+                <label>Loại sản phẩm</label>
+                <select class="form-control" style="width: 150px;" onchange="filterTable()" id="filterType">
+                    <option value="">Tất cả loại</option>
+                    @foreach (var type in Model.Select(p => p.Loai).Distinct())
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Trạng thái giảm giá</label>
+                <select class="form-control" style="width: 150px;" onchange="filterTable()" id="filterStatus">
+                    <option value="">Tất cả</option>
+                    <option value="discounted">Đang giảm giá</option>
+                    <option value="expiring">Sắp hết hạn</option>
+                    <option value="none">Không giảm giá</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Màu sắc</label>
+                <select class="form-control" style="width: 150px;" onchange="filterTable()" id="filterColor">
+                    <option value="">Tất cả màu</option>
+                    @foreach (var color in Model.Select(p => p.MauSac).Distinct().Where(c => !string.IsNullOrEmpty(c)))
+                    {
+                        <option value="@color">@color</option>
+                    }
+                </select>
+            </div>
+            <div style="margin-left: auto;">
+                <button class="btn btn-info" onclick="resetFilters()">
+                    <i class="fas fa-sync-alt"></i> Xóa bộ lọc
+                </button>
+            </div>
+        </div>
+
+        <!-- Nút thao tác -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Danh sách Sản phẩm áp dụng Giảm giá</h3>
+                <div class="actions">
+                    <button class="btn btn-success" onclick="showBulkDiscountModal()">
+                        <i class="fas fa-bolt"></i> Giảm giá hàng loạt
+                    </button>
+                    <button class="btn btn-warning" onclick="showPriceUpdateModal()">
+                        <i class="fas fa-sync-alt"></i> Cập nhật giá
+                    </button>
+                    <button class="btn btn-info" onclick="exportToExcel()">
+                        <i class="fas fa-file-export"></i> Xuất Excel
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table" id="productsTable">
+                <thead>
+                    <tr>
+                        <th width="50">ID</th>
+                        <th>Tên Sản phẩm</th>
+                        <th width="120">Loại</th>
+                        <th width="120">Giá gốc</th>
+                        <th width="120">Giá bán</th>
+                        <th width="100">Giảm giá</th>
+                        <th width="120">Ngày kết thúc</th>
+                        <th width="350">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in Model)
+                    {
+                        var activeDiscount = product.GiamGias
+                            .Where(g => g.NgayBatDau <= now &&
+                                      (g.NgayKetThuc == null || g.NgayKetThuc >= now))
+                            .OrderByDescending(g => g.PhanTramGiam)
+                            .FirstOrDefault();
+
+                        decimal discountRate = activeDiscount?.PhanTramGiam ?? 0m;
+                        decimal discountPercent = discountRate * 100;
+
+                        // Tính giá gốc
+                        decimal giaGoc = product.Gia;
+                        if (discountRate > 0)
+                        {
+                            giaGoc = product.Gia / (1 - discountRate);
+                        }
+
+                        decimal giaSauGiam = giaGoc * (1 - discountRate);
+                        decimal soTienGiam = giaGoc - giaSauGiam;
+                        bool hasDiscount = discountRate > 0;
+                        bool isExpiring = activeDiscount?.NgayKetThuc != null &&
+                                        activeDiscount.NgayKetThuc <= now.AddDays(7) &&
+                                        activeDiscount.NgayKetThuc >= now;
+
+                        string endDateStr = activeDiscount?.NgayKetThuc?.ToString("dd/MM/yyyy") ?? "Không hết hạn";
+                        string startDateStr = activeDiscount?.NgayBatDau.ToString("dd/MM/yyyy") ?? "";
+
+                        <tr class="@(isExpiring ? "expiring" : "")"
+                            data-type="@product.Loai"
+                            data-color="@product.MauSac"
+                            data-status="@(hasDiscount ? (isExpiring ? "expiring" : "discounted") : "none")">
+                            <td>@product.MaSP</td>
+                            <td>
+                                <strong>@product.TenSP</strong>
+                                <div class="discount-info">
+                                    @if (!string.IsNullOrEmpty(product.MauSac))
+                                    {
+                                        <span>Màu: @product.MauSac</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(product.KichThuoc))
+                                    {
+                                        <span>Size: @product.KichThuoc</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>@product.Loai</td>
+                            <td>
+                                <div class="price-container">
+                                    <span class="price-old">@giaGoc.ToString("N0") ₫</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="price-container">
+                                    <span class="price-new">@product.Gia.ToString("N0") ₫</span>
+                                    @if (hasDiscount && soTienGiam > 0)
+                                    {
+                                        <span class="price-save">Tiết kiệm: @soTienGiam.ToString("N0") ₫</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                @if (hasDiscount)
+                                {
+                                    if (isExpiring)
+                                    {
+                                        <span class="status-expiring">@discountPercent.ToString("0")%</span>
+                                        <div class="badge badge-warning">Sắp hết</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-sale">@discountPercent.ToString("0")%</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="status-none">0%</span>
+                                }
+                            </td>
+                            <td>
+                                @endDateStr
+                                @if (isExpiring)
+                                {
+                                    <div class="badge badge-warning mt-3">
+                                        @((activeDiscount.NgayKetThuc.Value - now).Days) ngày
+                                    </div>
+                                }
+                            </td>
+                            <td class="actions-cell">
+                                <div class="discount-form">
+                                    <div class="form-group">
+                                        <label>% Giảm</label>
+                                        <input type="number"
+                                               class="form-control form-control-small discount-percent"
+                                               min="0"
+                                               max="100"
+                                               value="@discountPercent.ToString("0")"
+                                               data-id="@product.MaSP"
+                                               onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Đến ngày</label>
+                                        <input type="text"
+                                               class="form-control form-control-medium date-input end-date"
+                                               placeholder="dd/mm/yyyy"
+                                               value="@(activeDiscount?.NgayKetThuc?.ToString("dd/MM/yyyy") ?? "")"
+                                               data-id="@product.MaSP">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>&nbsp;</label>
+                                        <button class="btn btn-primary btn-sm" onclick="applySingleDiscount(@product.MaSP)">
+                                            <i class="fas fa-check"></i> Áp dụng
+                                        </button>
+                                    </div>
+                                    @if (hasDiscount)
+                                    {
+                                        <div class="form-group">
+                                            <label>&nbsp;</label>
+                                            <button class="icon-btn text-danger" onclick="removeDiscount(@product.MaSP)" title="Xóa giảm giá">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- Modal cập nhật giá -->
+    <div id="priceUpdateModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-sync-alt"></i> Cập nhật giá sản phẩm</h3>
+                <button class="modal-close" onclick="closeModal('priceUpdateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label>Chọn phương thức cập nhật:</label>
+                    <select id="updateMethod" class="form-control" onchange="toggleUpdateFields()">
+                        <option value="percent">Tăng/Giảm theo %</option>
+                        <option value="fixed">Tăng/Giảm cố định (₫)</option>
+                        <option value="newprice">Đặt giá mới (₫)</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label id="updateLabel">Phần trăm thay đổi (%)</label>
+                    <input type="number" id="updateValue" class="form-control" value="0" step="0.1" min="-100" max="1000">
+                    <small id="updateHelp" class="text-muted">Nhập số dương để tăng giá, số âm để giảm giá</small>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="applyToDiscounted" checked>
+                    <label for="applyToDiscounted">Áp dụng cả cho sản phẩm đang giảm giá</label>
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Thao tác này sẽ ảnh hưởng đến tất cả sản phẩm phù hợp với bộ lọc hiện tại.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-warning" onclick="applyPriceUpdate()">
+                    <i class="fas fa-sync-alt"></i> Cập nhật
+                </button>
+                <button class="btn" onclick="closeModal('priceUpdateModal')">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal giảm giá hàng loạt -->
+    <div id="bulkDiscountModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-bolt"></i> Áp dụng giảm giá hàng loạt</h3>
+                <button class="modal-close" onclick="closeModal('bulkDiscountModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label>Phần trăm giảm giá:</label>
+                    <input type="number" id="bulkDiscountPercent" class="form-control"
+                           min="0" max="100" value="10" step="0.1">
+                    <small class="text-muted">Nhập từ 0 đến 100%</small>
+                </div>
+                <div class="form-group mb-3">
+                    <label>Ngày kết thúc:</label>
+                    <input type="text" id="bulkEndDate" class="form-control date-input" placeholder="dd/mm/yyyy">
+                    <small class="text-muted">Để trống nếu không có ngày kết thúc</small>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="overwriteExisting" checked>
+                    <label for="overwriteExisting">Ghi đè giảm giá hiện tại</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="updatePriceInProduct" checked>
+                    <label for="updatePriceInProduct">Cập nhật giá sản phẩm</label>
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Thao tác này sẽ áp dụng cho <strong id="affectedProductsCount">@Model.Count</strong> sản phẩm phù hợp với bộ lọc.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="confirmBulkDiscount()">
+                    <i class="fas fa-bolt"></i> Áp dụng
+                </button>
+                <button class="btn" onclick="closeModal('bulkDiscountModal')">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div>Đang xử lý...</div>
+    </div>
+
+    <script>
+        // Khởi tạo flatpickr
+        document.addEventListener('DOMContentLoaded', function() {
+            // Khởi tạo cho tất cả các input date
+            flatpickr(".date-input", {
+                dateFormat: "d/m/Y",
+                locale: "vn",
+                minDate: "today"
+            });
+
+            // Khởi tạo cho modal
+            flatpickr("#bulkEndDate", {
+                dateFormat: "d/m/Y",
+                locale: "vn",
+                minDate: "today"
+            });
+
+            // Cập nhật số lượng sản phẩm bị ảnh hưởng
+            updateAffectedProductsCount();
+        });
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showPriceUpdateModal() {
+            document.getElementById('priceUpdateModal').style.display = 'flex';
+        }
+
+        function showBulkDiscountModal() {
+            document.getElementById('bulkDiscountModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function toggleUpdateFields() {
+            const method = document.getElementById('updateMethod').value;
+            const label = document.getElementById('updateLabel');
+            const valueInput = document.getElementById('updateValue');
+            const helpText = document.getElementById('updateHelp');
+
+            switch(method) {
+                case 'percent':
+                    label.textContent = 'Phần trăm thay đổi (%)';
+                    valueInput.min = -100;
+                    valueInput.max = 1000;
+                    valueInput.step = "0.1";
+                    helpText.textContent = 'Nhập số dương để tăng giá, số âm để giảm giá';
+                    break;
+                case 'fixed':
+                    label.textContent = 'Số tiền thay đổi (₫)';
+                    valueInput.min = -10000000;
+                    valueInput.max = 10000000;
+                    valueInput.step = "1000";
+                    helpText.textContent = 'Nhập số dương để tăng giá, số âm để giảm giá';
+                    break;
+                case 'newprice':
+                    label.textContent = 'Giá mới (₫)';
+                    valueInput.min = 0;
+                    valueInput.max = 100000000;
+                    valueInput.step = "1000";
+                    helpText.textContent = 'Nhập giá mới cho sản phẩm';
+                    break;
+            }
+            valueInput.value = method === 'newprice' ? '' : '0';
+        }
+
+        function applySingleDiscount(productId) {
+            const percentInput = document.querySelector(`.discount-percent[data-id="${productId}"]`);
+            const endDateInput = document.querySelector(`.end-date[data-id="${productId}"]`);
+
+            const discountPercent = parseFloat(percentInput.value);
+            const endDate = endDateInput.value.trim();
+
+            if (isNaN(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+                alert('Vui lòng nhập phần trăm giảm giá hợp lệ (0-100).');
+                percentInput.focus();
+                return;
+            }
+
+            // Validate date format
+            if (endDate && !isValidDate(endDate)) {
+                alert('Vui lòng nhập ngày hợp lệ (dd/mm/yyyy).');
+                endDateInput.focus();
+                return;
+            }
+
+            const confirmMessage = discountPercent > 0
+                ? `Áp dụng giảm giá ${discountPercent}% cho sản phẩm này?`
+                : `Xóa giảm giá cho sản phẩm này?`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            showLoading();
+
+            // Gửi request AJAX
+            fetch('@Url.Action("ApplyDiscount", "Admin")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    maSP: productId,
+                    discountPercentage: discountPercent,
+                    endDate: endDate || null,
+                    updatePriceInProduct: true
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                alert('Lỗi hệ thống khi áp dụng giảm giá.');
+            });
+        }
+
+        function removeDiscount(productId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa giảm giá cho sản phẩm này?')) {
+                return;
+            }
+
+            showLoading();
+
+            fetch('@Url.Action("RemoveDiscount", "Admin")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    maSP: productId,
+                    updatePriceInProduct: true
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                alert('Lỗi hệ thống khi xóa giảm giá.');
+            });
+        }
+
+        function applyPriceUpdate() {
+            const method = document.getElementById('updateMethod').value;
+            const value = parseFloat(document.getElementById('updateValue').value);
+            const applyToDiscounted = document.getElementById('applyToDiscounted').checked;
+
+            if (isNaN(value)) {
+                alert('Vui lòng nhập giá trị hợp lệ.');
+                return;
+            }
+
+            let message = `Bạn có chắc chắn muốn cập nhật giá `;
+            switch(method) {
+                case 'percent':
+                    message += `${value}%`;
+                    break;
+                case 'fixed':
+                    message += `${value.toLocaleString()} ₫`;
+                    break;
+                case 'newprice':
+                    message += `thành ${value.toLocaleString()} ₫`;
+                    break;
+            }
+            message += ' cho tất cả sản phẩm phù hợp với bộ lọc?';
+
+            if (!confirm(message)) {
+                return;
+            }
+
+            showLoading();
+
+            fetch('@Url.Action("UpdateProductPrices", "Admin")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    method: method,
+                    value: value,
+                    applyToDiscounted: applyToDiscounted
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                alert('Lỗi hệ thống khi cập nhật giá.');
+            });
+        }
+
+        function confirmBulkDiscount() {
+            const discountPercent = parseFloat(document.getElementById('bulkDiscountPercent').value);
+            const endDate = document.getElementById('bulkEndDate').value.trim();
+            const overwriteExisting = document.getElementById('overwriteExisting').checked;
+            const updatePriceInProduct = document.getElementById('updatePriceInProduct').checked;
+
+            if (isNaN(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+                alert('Vui lòng nhập phần trăm giảm giá hợp lệ (0-100).');
+                return;
+            }
+
+            if (endDate && !isValidDate(endDate)) {
+                alert('Vui lòng nhập ngày kết thúc hợp lệ (dd/mm/yyyy).');
+                return;
+            }
+
+            const affectedCount = getFilteredProductCount();
+            if (!confirm(`Áp dụng giảm giá ${discountPercent}% cho ${affectedCount} sản phẩm phù hợp với bộ lọc?`)) {
+                return;
+            }
+
+            showLoading();
+
+            fetch('@Url.Action("ApplyBulkDiscount", "Admin")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    discountPercentage: discountPercent,
+                    endDate: endDate || null,
+                    overwriteExisting: overwriteExisting,
+                    updatePriceInProduct: updatePriceInProduct
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                alert('Lỗi hệ thống khi áp dụng giảm giá hàng loạt.');
+            });
+        }
+
+        function filterTable() {
+            const typeFilter = document.getElementById('filterType').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            const colorFilter = document.getElementById('filterColor').value.toLowerCase();
+
+            const rows = document.querySelectorAll('#productsTable tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const type = row.getAttribute('data-type') || '';
+                const color = row.getAttribute('data-color') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                const typeMatch = !typeFilter || type.toLowerCase().includes(typeFilter);
+                const colorMatch = !colorFilter || color.toLowerCase().includes(colorFilter);
+                const statusMatch = !statusFilter || status === statusFilter;
+
+                if (typeMatch && colorMatch && statusMatch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            updateAffectedProductsCount();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterColor').value = '';
+            filterTable();
+        }
+
+        function getFilteredProductCount() {
+            const rows = document.querySelectorAll('#productsTable tbody tr');
+            let count = 0;
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    count++;
+                }
+            });
+            return count;
+        }
+
+        function updateAffectedProductsCount() {
+            const count = getFilteredProductCount();
+            document.getElementById('affectedProductsCount').textContent = count;
+        }
+
+        function exportToExcel() {
+            showLoading();
+
+            // Tạo dữ liệu Excel
+            const rows = [];
+            const headers = ['Mã SP', 'Tên Sản phẩm', 'Loại', 'Giá gốc', 'Giá bán', 'Giảm giá', 'Ngày kết thúc', 'Màu sắc', 'Kích thước'];
+            rows.push(headers);
+
+            const visibleRows = document.querySelectorAll('#productsTable tbody tr[style!="display: none;"]');
+            visibleRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const data = [
+                    cells[0].textContent.trim(),
+                    cells[1].querySelector('strong').textContent.trim(),
+                    cells[2].textContent.trim(),
+                    cells[3].querySelector('.price-old').textContent.trim(),
+                    cells[4].querySelector('.price-new').textContent.trim(),
+                    cells[5].querySelector('.status-sale, .status-none, .status-expiring').textContent.trim(),
+                    cells[6].textContent.trim().split('\n')[0], // Lấy phần ngày
+                    cells[1].querySelector('.discount-info span:nth-child(1)')?.textContent.replace('Màu:', '').trim() || '',
+                    cells[1].querySelector('.discount-info span:nth-child(2)')?.textContent.replace('Size:', '').trim() || ''
+                ];
+                rows.push(data);
+            });
+
+            // Tạo file CSV
+            let csvContent = "data:text/csv;charset=utf-8,";
+            rows.forEach(row => {
+                csvContent += row.map(cell => `"${cell}"`).join(",") + "\n";
+            });
+
+            // Tải file
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "danh_sach_giam_gia_" + new Date().toISOString().split('T')[0] + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            hideLoading();
+        }
+
+        function isValidDate(dateString) {
+            const regex = /^\d{2}\/\d{2}\/\d{4}$/;
+            if (!regex.test(dateString)) return false;
+
+            const parts = dateString.split('/');
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+
+            const date = new Date(year, month, day);
+            return date.getFullYear() === year &&
+                   date.getMonth() === month &&
+                   date.getDate() === day;
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Enter key to apply discount
+        document.addEventListener('keypress', function(event) {
+            if (event.target.classList.contains('discount-percent') && event.key === 'Enter') {
+                const productId = event.target.getAttribute('data-id');
+                applySingleDiscount(productId);
+            }
+        });
+    </script>
+</body>
+</html>
