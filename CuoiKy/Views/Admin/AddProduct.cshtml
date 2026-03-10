@@ -1,4 +1,4 @@
-﻿﻿@model CuoiKy.Models.SanPham
+@model CuoiKy.Models.SanPham
 @{
 
     var nhaCungCap = ViewBag.NhaCungCap as List<CuoiKy.Models.NhaCungCap>;
@@ -6,7 +6,6 @@
     // Lấy Vai trò từ Session và khai báo biến isAdmin
     var userRole = Session["AdminRole"] as string;
     var isAdmin = userRole == "Admin";
-    var isNhanVienKho = userRole == "NhanVienKho";
     var isNhanVienKho = userRole == "NhanVienKho";
     // Biến để gộp Admin và Nhân viên thường (những người có toàn quyền)
     var isFullAccessNhanVien = isAdmin || userRole == "NhanVien";
@@ -296,6 +295,10 @@
                 @Html.AntiForgeryToken()
 
                 @Html.ValidationSummary(true, "", new { @class = "validation-summary-errors" })
+                @if (ViewBag.UploadError != null)
+                {
+                    <div class="alert alert-danger">@ViewBag.UploadError</div>
+                }
 
                 <div class="form-group">
                     <label>Tên sản phẩm *</label>

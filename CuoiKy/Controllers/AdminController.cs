@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
@@ -7,6 +7,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using CuoiKy.Models;
+using CuoiKy.Utils;
 using ClosedXML.Excel;
 using CuoiKy.Filters;
 using System.Globalization;
@@ -31,13 +32,24 @@ namespace CuoiKy.Controllers
         [HttpPost]
         public ActionResult Login(string username, string password)
         {
-            // Tìm tài khoản có tên đăng nhập và mật khẩu khớp, và VaiTro là Admin HOẶC NhanVien
             var admin = db.TaiKhoans.FirstOrDefault(t =>
                 t.TenDangNhap == username &&
-                t.MatKhau == password &&
-                (t.VaiTro == "Admin" || t.VaiTro == "NhanVien" || t.VaiTro == "NhanVienKho")); 
+                (t.VaiTro == "Admin" || t.VaiTro == "NhanVien" || t.VaiTro == "NhanVienKho"));
 
-            if (admin != null)
+            // Xác minh mật khẩu BCrypt (hoặc backward cho mật khẩu cũ)
+            bool passwordValid = false;
+            if (admin != null && !string.IsNullOrEmpty(admin.MatKhau))
+            {
+                if (SecurityHelper.IsBcryptHash(admin.MatKhau))
+                    passwordValid = SecurityHelper.VerifyPassword(password, admin.MatKhau);
+                else if (admin.MatKhau == password)
+                {
+                    passwordValid = true;
+                    try { admin.MatKhau = SecurityHelper.HashPassword(password); db.SaveChanges(); } catch { }
+                }
+            }
+
+            if (admin != null && passwordValid)
             {
                 Session["AdminLogged"] = true;
                 Session["AdminUsername"] = admin.TenDangNhap;
@@ -770,11 +782,43 @@ namespace CuoiKy.Controllers
                     db.SanPhams.Add(product);
                     db.SaveChanges();
 
-                    // XỬ LÝ UPLOAD ẢNH VÀ RENAME
-                    RenameAndSaveImage(hinhAnh1, product.MaSP, "a");
-                    RenameAndSaveImage(hinhAnh2, product.MaSP, "b");
-                    RenameAndSaveImage(hinhAnh3, product.MaSP, "c");
-                    RenameAndSaveImage(hinhAnh4, product.MaSP, "d");
+                    // XỬ LÝ UPLOAD ẢNH - Bảo mật: extension, MIME, size, magic bytes
+                    var uploadResult = RenameAndSaveImage(hinhAnh1, product.MaSP, "a");
+                    if (!string.IsNullOrEmpty(uploadResult))
+                    {
+                        db.SanPhams.Remove(product);
+                        db.SaveChanges();
+                        ViewBag.UploadError = uploadResult;
+                        ViewBag.NhaCungCap = db.NhaCungCaps.ToList();
+                        return View(product);
+                    }
+                    uploadResult = RenameAndSaveImage(hinhAnh2, product.MaSP, "b");
+                    if (!string.IsNullOrEmpty(uploadResult))
+                    {
+                        db.SanPhams.Remove(product);
+                        db.SaveChanges();
+                        ViewBag.UploadError = uploadResult;
+                        ViewBag.NhaCungCap = db.NhaCungCaps.ToList();
+                        return View(product);
+                    }
+                    uploadResult = RenameAndSaveImage(hinhAnh3, product.MaSP, "c");
+                    if (!string.IsNullOrEmpty(uploadResult))
+                    {
+                        db.SanPhams.Remove(product);
+                        db.SaveChanges();
+                        ViewBag.UploadError = uploadResult;
+                        ViewBag.NhaCungCap = db.NhaCungCaps.ToList();
+                        return View(product);
+                    }
+                    uploadResult = RenameAndSaveImage(hinhAnh4, product.MaSP, "d");
+                    if (!string.IsNullOrEmpty(uploadResult))
+                    {
+                        db.SanPhams.Remove(product);
+                        db.SaveChanges();
+                        ViewBag.UploadError = uploadResult;
+                        ViewBag.NhaCungCap = db.NhaCungCaps.ToList();
+                        return View(product);
+                    }
 
                     TempData["SuccessMessage"] = $"Thêm sản phẩm '{product.TenSP}' thành công!";
                     return RedirectToAction("Products");
@@ -791,31 +835,35 @@ namespace CuoiKy.Controllers
             }
         }
 
-        // Hàm rename và save ảnh
-        private void RenameAndSaveImage(HttpPostedFileBase file, int maSP, string suffix)
+        /// <summary>
+        /// Bảo mật upload file: chỉ .jpg/.jpeg/.png/.webp, validate MIME, size 5MB, magic bytes.
+        /// Trả về null nếu OK, trả về chuỗi lỗi nếu có lỗi.
+        /// </summary>
+        private string RenameAndSaveImage(HttpPostedFileBase file, int maSP, string suffix)
         {
-            if (file != null && file.ContentLength > 0)
+            if (file == null || file.ContentLength == 0) return null;
+
+            var validation = FileUploadValidator.ValidateImageUpload(file);
+            if (!validation.IsValid)
+                return validation.ErrorMessage;
+
+            try
             {
-                try
-                {
-                    // Tạo tên file mới: MaSP + suffix + .jpg
-                    var newFileName = $"{maSP}{suffix}.jpg";
-                    var path = Path.Combine(Server.MapPath("~/Images/"), newFileName);
+                // Lưu với .jpg để tương thích views hiện tại (đã validate là ảnh hợp lệ)
+                var newFileName = $"{maSP}{suffix}.jpg";
+                var path = Path.Combine(Server.MapPath("~/Images/"), Path.GetFileName(newFileName));
 
-                    // Tạo thư mục nếu chưa tồn tại
-                    var directory = Path.GetDirectoryName(path);
-                    if (!Directory.Exists(directory))
-                    {
-                        Directory.CreateDirectory(directory);
-                    }
+                var directory = Path.GetDirectoryName(path);
+                if (!Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
 
-                    // Lưu ảnh
-                    file.SaveAs(path);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Lỗi upload ảnh: " + ex.Message);
-                }
+                file.SaveAs(path);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Lỗi upload ảnh: " + ex.Message);
+                return "Lỗi lưu file: " + ex.Message;
             }
         }
 
@@ -1283,11 +1331,11 @@ namespace CuoiKy.Controllers
                     db.KhachHangs.Add(customer);
                     db.SaveChanges();
 
-                    // Tạo tài khoản mặc định cho khách hàng
+                    // Tạo tài khoản mặc định - BCrypt hash
                     var taiKhoan = new TaiKhoan
                     {
                         TenDangNhap = "customer" + customer.MaKH,
-                        MatKhau = "123456",
+                        MatKhau = SecurityHelper.HashPassword("123456"),
                         VaiTro = "KhachHang",
                         TrangThai = true,
                         MaKH = customer.MaKH,
@@ -1475,11 +1523,11 @@ namespace CuoiKy.Controllers
                 db.NhanViens.Add(employee);
                 db.SaveChanges();
 
-                // Tạo tài khoản cho nhân viên
+                // Tạo tài khoản cho nhân viên - BCrypt hash
                 var taiKhoan = new TaiKhoan
                 {
                     TenDangNhap = "nv" + employee.MaNV,
-                    MatKhau = "123456",
+                    MatKhau = SecurityHelper.HashPassword("123456"),
                     VaiTro = "NhanVien",
                     TrangThai = true,
                     MaNV = employee.MaNV,
@@ -1583,7 +1631,7 @@ namespace CuoiKy.Controllers
             try
             {
                 // Kiểm tra mật khẩu xác nhận
-                if (account.MatKhau != confirmPassword)
+                if (string.IsNullOrEmpty(account.MatKhau) || account.MatKhau != confirmPassword)
                 {
                     ModelState.AddModelError("confirmPassword", "Mật khẩu xác nhận không khớp!");
                     ViewBag.NhanVienList = db.NhanViens.ToList();
@@ -1654,9 +1702,10 @@ namespace CuoiKy.Controllers
                     account.MaKH = null; // Đảm bảo MaKH là null
                 }
 
-                // Set thông tin mặc định
+                // Set thông tin mặc định - BCrypt hash mật khẩu
                 account.TrangThai = true;
                 account.NgayTao = DateTime.Now;
+                account.MatKhau = SecurityHelper.HashPassword(account.MatKhau);
 
                 if (ModelState.IsValid)
                 {
@@ -1735,10 +1784,10 @@ namespace CuoiKy.Controllers
                 {
                     existing.TenDangNhap = account.TenDangNhap;
 
-                    // Chỉ cập nhật mật khẩu nếu có nhập mới
+                    // Chỉ cập nhật mật khẩu nếu có nhập mới - BCrypt hash
                     if (!string.IsNullOrEmpty(newPassword))
                     {
-                        existing.MatKhau = newPassword;
+                        existing.MatKhau = SecurityHelper.HashPassword(newPassword);
                     }
 
                     existing.VaiTro = account.VaiTro;
@@ -1812,8 +1861,8 @@ namespace CuoiKy.Controllers
                     return RedirectToAction("Accounts");
                 }
 
-                // Reset về mật khẩu mặc định
-                account.MatKhau = "123456";
+                // Reset về mật khẩu mặc định - BCrypt hash
+                account.MatKhau = SecurityHelper.HashPassword("123456");
                 db.SaveChanges();
 
                 TempData["SuccessMessage"] = $"Đã reset mật khẩu tài khoản '{account.TenDangNhap}' về '123456'!";

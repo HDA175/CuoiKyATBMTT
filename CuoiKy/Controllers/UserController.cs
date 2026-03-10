@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
 using CuoiKy.Models;
+using CuoiKy.Utils;
 using Microsoft.Owin.Security;
 using System.Security.Claims;
 
@@ -47,7 +48,24 @@ namespace CuoiKy.Controllers
             // Tìm tài khoản
             var taiKhoan = db.TaiKhoans.FirstOrDefault(tk => tk.TenDangNhap == tenDangNhap);
 
-            if (taiKhoan != null && taiKhoan.MatKhau == matKhau && (taiKhoan.TrangThai ?? true))
+            // Xác minh mật khẩu - BCrypt hash (hoặc backward compatibility cho mật khẩu cũ dạng text)
+            bool passwordValid = false;
+            if (taiKhoan != null && !string.IsNullOrEmpty(taiKhoan.MatKhau))
+            {
+                if (SecurityHelper.IsBcryptHash(taiKhoan.MatKhau))
+                    passwordValid = SecurityHelper.VerifyPassword(matKhau, taiKhoan.MatKhau);
+                else
+                {
+                    // Backward: mật khẩu cũ lưu dạng text - sau khi đăng nhập thành công sẽ nâng cấp lên BCrypt
+                    if (taiKhoan.MatKhau == matKhau)
+                    {
+                        passwordValid = true;
+                        try { taiKhoan.MatKhau = SecurityHelper.HashPassword(matKhau); db.SaveChanges(); } catch { }
+                    }
+                }
+            }
+
+            if (taiKhoan != null && passwordValid && (taiKhoan.TrangThai ?? true))
             {
                 if (taiKhoan.VaiTro == "KhachHang" && taiKhoan.MaKH.HasValue)
                 {
@@ -197,11 +215,12 @@ namespace CuoiKy.Controllers
                 db.KhachHangs.Add(khachHang);
                 db.SaveChanges();
 
-                // Tạo tài khoản mới
+                // Tạo tài khoản mới - OAuth không dùng mật khẩu, dùng BCrypt hash ngẫu nhiên
+                var randomPass = "google_" + Guid.NewGuid().ToString("N").Substring(0, 16);
                 var taiKhoan = new TaiKhoan
                 {
                     TenDangNhap = email,
-                    MatKhau = "google_" + Guid.NewGuid().ToString().Substring(0, 8), // Mật khẩu ngẫu nhiên
+                    MatKhau = SecurityHelper.HashPassword(randomPass),
                     VaiTro = "KhachHang",
                     TrangThai = true,
                     NgayTao = DateTime.Now,
@@ -314,11 +333,11 @@ namespace CuoiKy.Controllers
                 db.KhachHangs.Add(khachHang);
                 db.SaveChanges();
 
-                // Tạo tài khoản
+                // Tạo tài khoản - BCrypt hash, không lưu password dạng text
                 var taiKhoan = new TaiKhoan
                 {
                     TenDangNhap = tenDangNhap,
-                    MatKhau = matKhau,
+                    MatKhau = SecurityHelper.HashPassword(matKhau),
                     VaiTro = "KhachHang",
                     TrangThai = true,
                     NgayTao = DateTime.Now,
