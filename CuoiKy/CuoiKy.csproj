@@ -186,6 +186,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdminAuthorizeAttribute.cs" />
+    <Compile Include="Middleware\MiniWafMiddleware.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
@@ -265,6 +266,7 @@
     </Compile>
     <Compile Include="Startup.cs" />
     <Compile Include="Utils\FileUploadValidator.cs" />
+    <Compile Include="Utils\SecurityAuditLogger.cs" />
     <Compile Include="Utils\SecurityHelper.cs" />
     <Compile Include="Utils\VnPayLibrary.cs" />
   </ItemGroup>

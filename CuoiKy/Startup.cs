@@ -1,4 +1,5 @@
-﻿using Microsoft.Owin;
+using CuoiKy.Middleware;
+using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.Google;
@@ -16,6 +17,9 @@ namespace CuoiKy
 
         public void Configuration(IAppBuilder app)
         {
+            // Mini WAF - chặn tấn công XSS, SQL Injection (đặt trước routing)
+            app.Use(typeof(MiniWafMiddleware));
+
             app.MapSignalR();
             ConfigureAuth(app);
         }

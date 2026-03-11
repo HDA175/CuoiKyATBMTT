@@ -125,7 +125,11 @@ namespace CuoiKy.Utils
             if (string.IsNullOrEmpty(input)) return string.Empty;
             var trimmed = input.Trim();
             if (trimmed.Length > maxLength) trimmed = trimmed.Substring(0, maxLength);
-            if (ContainsSqlInjection(trimmed)) return null;
+            if (ContainsSqlInjection(trimmed))
+            {
+                SecurityAuditLogger.LogSqlInjectionAttempt("Search", trimmed);
+                return null;
+            }
             return trimmed;
         }
 
@@ -137,7 +141,11 @@ namespace CuoiKy.Utils
             if (string.IsNullOrEmpty(input)) return string.Empty;
             var trimmed = input.Trim();
             if (trimmed.Length > maxLength) trimmed = trimmed.Substring(0, maxLength);
-            if (ContainsSqlInjection(trimmed)) return null;
+            if (ContainsSqlInjection(trimmed))
+            {
+                SecurityAuditLogger.LogSqlInjectionAttempt("Comment", trimmed);
+                return null;
+            }
             // Loại bỏ thẻ HTML cơ bản
             trimmed = Regex.Replace(trimmed, @"<[^>]+>", "");
             return trimmed;

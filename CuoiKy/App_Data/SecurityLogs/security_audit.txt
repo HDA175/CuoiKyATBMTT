@@ -1,0 +1,44 @@
+
+================================================================================
+[2026-03-11 21:06:34] CẢNH BÁO BẢO MẬT - NGHI NGỜ BỊ TẤN CÔNG
+--------------------------------------------------------------------------------
+Loại: WAF_BLOCKED
+Chi tiết: Pattern tấn công: alert(
+IP: ::1
+URL: /EvolStore/CuaHang?search=%3Cscript%3Ealert(%22hack%22)%3C%2Fscript%3E
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0
+Thông tin thêm: Path: /EvolStore/CuaHang
+================================================================================
+
+================================================================================
+[2026-03-11 21:07:44] CẢNH BÁO BẢO MẬT - NGHI NGỜ BỊ TẤN CÔNG
+--------------------------------------------------------------------------------
+Loại: WAF_BLOCKED
+Chi tiết: Pattern tấn công: <script
+IP: ::1
+URL: /EvolStore/ThemDanhGia
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0
+Thông tin thêm: Path: /EvolStore/ThemDanhGia
+================================================================================
+
+================================================================================
+[2026-03-11 21:07:55] CẢNH BÁO BẢO MẬT - NGHI NGỜ BỊ TẤN CÔNG
+--------------------------------------------------------------------------------
+Loại: WAF_BLOCKED
+Chi tiết: Pattern tấn công: <script
+IP: ::1
+URL: /EvolStore/ThemDanhGia
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0
+Thông tin thêm: Path: /EvolStore/ThemDanhGia
+================================================================================
+
+================================================================================
+[2026-03-11 21:09:24] CẢNH BÁO BẢO MẬT - NGHI NGỜ BỊ TẤN CÔNG
+--------------------------------------------------------------------------------
+Loại: SQL_INJECTION
+Chi tiết: SQL Injection - Nguồn: Search
+IP: ::1
+URL: /EvolStore/CuaHang?search=%27%20OR%201%3D1%20--
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0
+Thông tin thêm: Input (trích): ' OR 1=1 --
+================================================================================

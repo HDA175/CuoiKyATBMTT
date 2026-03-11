@@ -73,6 +73,7 @@ namespace CuoiKy.Utils
             var extension = Path.GetExtension(file.FileName);
             if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))
             {
+                SecurityAuditLogger.LogInvalidFileUpload("Extension không hợp lệ", file.FileName);
                 return new ValidationResult
                 {
                     IsValid = false,
@@ -83,6 +84,7 @@ namespace CuoiKy.Utils
             // 3.2 Kiểm tra kích thước
             if (file.ContentLength > MaxFileSizeBytes)
             {
+                SecurityAuditLogger.LogInvalidFileUpload($"File quá lớn: {file.ContentLength / 1024}KB", file.FileName);
                 return new ValidationResult
                 {
                     IsValid = false,
@@ -111,6 +113,7 @@ namespace CuoiKy.Utils
 
                     if (!IsValidImageSignature(extension, headerBytes))
                     {
+                        SecurityAuditLogger.LogInvalidFileUpload("Magic bytes không khớp - file giả mạo", file.FileName);
                         return new ValidationResult
                         {
                             IsValid = false,
