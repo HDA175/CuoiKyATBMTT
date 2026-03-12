@@ -3,335 +3,136 @@
     Layout = null;
 }
 
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - EvolStore</title>
+
 <style>
-    .register-page {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 32px 16px;
-        background: linear-gradient(135deg, #f3f4f6, #ffffff);
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #111827;
-    }
+body{
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f5f6f8;
+}
 
-    .register-wrapper {
-        width: 100%;
-        max-width: 960px;
-    }
+.register-container{
+    max-width:900px;
+    margin:60px auto;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.1);
+    display:flex;
+    overflow:hidden;
+}
 
-    .register-card {
-        background: #ffffff;
-        border-radius: 24px;
-        overflow: hidden;
-        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
-        border: 1px solid #e5e7eb;
-    }
+.left-box{
+    width:40%;
+    background:linear-gradient(135deg,#e5e7eb,#d1d5db);
+    padding:40px;
+}
 
-    .register-left {
-        background:
-            radial-gradient(circle at top left, rgba(229, 231, 235, 0.8), transparent 60%),
-            linear-gradient(135deg, #e5e7eb, #d1d5db);
-        padding: 32px;
-        color: #111827;
-    }
+.left-box h1{
+    font-size:30px;
+}
 
-    .register-brand {
-        margin: auto 0;
-    }
+.right-box{
+    width:60%;
+    padding:40px;
+}
 
-    .brand-title {
-        font-size: 32px;
-        font-weight: 800;
-        color: #111827;
-        letter-spacing: 0.04em;
-    }
+input{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    margin-bottom:15px;
+}
 
-    .brand-subtitle {
-        margin-top: 12px;
-        font-size: 15px;
-        color: #4b5563;
-        max-width: 260px;
-        line-height: 1.6;
-    }
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:20px;
+    background:#111827;
+    color:white;
+    font-weight:600;
+}
 
-    .register-right {
-        padding: 32px;
-        background: #f9fafb;
-    }
+button:hover{
+    opacity:0.9;
+}
 
-    .register-inner {
-        max-width: 460px;
-        margin: 0 auto;
-    }
-
-    .register-title {
-        font-size: 24px;
-        font-weight: 700;
-        color: #111827;
-    }
-
-    .register-subtitle {
-        font-size: 14px;
-        color: #6b7280;
-        margin-bottom: 1.5rem;
-    }
-
-    .form-group-register {
-        margin-bottom: 1.1rem;
-    }
-
-    .register-input {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-        background-color: #f9fafb;
-        border-radius: 12px;
-        border: 1px solid #d1d5db;
-        padding: 11px 13px;
-        font-size: 14px;
-        color: #111827;
-        transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s;
-    }
-
-    .register-input::placeholder {
-        color: #9ca3af;
-    }
-
-    .register-input:focus {
-        background-color: #ffffff;
-        border-color: #111827;
-        outline: none;
-        box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.15);
-    }
-
-    .form-row-register {
-        display: flex;
-        gap: 12px;
-    }
-
-    .form-row-register .form-group-register {
-        flex: 1;
-        margin-bottom: 0;
-    }
-
-    .password-note {
-        font-size: 12px;
-        color: #6b7280;
-        margin-top: 4px;
-    }
-
-    .alert {
-        padding: 10px 12px;
-        border-radius: 10px;
-        margin-bottom: 1rem;
-        font-size: 13px;
-    }
-
-    .alert-danger {
-        background-color: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
-    }
-
-    .btn-register {
-        border-radius: 999px;
-        font-weight: 600;
-        border: 1px solid #111827;
-        padding: 11px 18px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        background: linear-gradient(135deg, #ffffff, #e5e7eb);
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
-        transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s;
-        color: #111827;
-        font-size: 14px;
-        width: 100%;
-        box-sizing: border-box;
-        margin-top: 0.25rem;
-    }
-
-    .btn-register:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 16px 35px rgba(15, 23, 42, 0.18);
-        color: #000000;
-    }
-
-    .btn-register:active:not(:disabled) {
-        transform: translateY(0);
-        box-shadow: 0 7px 18px rgba(15, 23, 42, 0.16);
-    }
-
-    .btn-register:disabled {
-        opacity: 0.7;
-        cursor: default;
-    }
-
-    .register-footer {
-        text-align: center;
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
-        font-size: 13px;
-        color: #6b7280;
-    }
-
-    .register-footer a {
-        color: #111827;
-        font-weight: 500;
-        text-decoration: none;
-    }
-
-    .register-footer a:hover {
-        text-decoration: underline;
-    }
-
-    @@media (max-width: 991.98px) {
-        .register-card {
-            border-radius: 20px;
-        }
-
-        .register-right {
-            padding: 24px 20px;
-        }
-
-        .register-page {
-            padding: 16px;
-        }
-    }
+.error{
+    color:red;
+    margin-bottom:10px;
+}
 </style>
 
-<div class="register-page">
-    <div class="register-wrapper">
-        <div class="register-card row g-0">
-            <!-- Cột trái: Branding -->
-            <div class="col-lg-6 register-left d-none d-lg-flex">
-                <div class="register-brand">
-                    <h1 class="brand-title">EvolStore</h1>
-                    <p class="brand-subtitle">
-                        Tạo tài khoản mới để lưu đơn hàng, theo dõi lịch sử mua sắm và nhận ưu đãi riêng dành cho bạn.
-                    </p>
-                </div>
-            </div>
+</head>
 
-            <!-- Cột phải: Form đăng ký -->
-            <div class="col-lg-6 register-right">
-                <div class="register-inner">
-                    <h2 class="register-title mb-1">Tạo tài khoản mới ✨</h2>
-                    <p class="register-subtitle">
-                        Điền thông tin bên dưới để đăng ký. Bạn có thể chỉnh sửa hồ sơ sau trong trang tài khoản.
-                    </p>
+<body>
 
-                    @if (ViewBag.Error != null)
-                    {
-                        <div class="alert alert-danger">@ViewBag.Error</div>
-                    }
+<div class="register-container">
 
-                    @using (Html.BeginForm("Register", "User", FormMethod.Post, new { id = "registerForm" }))
-                    {
-                        @Html.AntiForgeryToken()
+<div class="left-box">
+<h1>EvolStore</h1>
 
-                        <div class="form-group-register">
-                            <label for="TenDangNhap" class="form-label">Tên đăng nhập</label>
-                            <input type="text"
-                                   id="TenDangNhap"
-                                   name="TenDangNhap"
-                                   class="register-input"
-                                   placeholder="Nhập tên đăng nhập"
-                                   required />
-                        </div>
+<p>
+Tạo tài khoản mới để lưu đơn hàng, theo dõi lịch sử mua sắm
+và nhận các ưu đãi dành riêng cho bạn.
+</p>
 
-                        <div class="form-group-register">
-                            <label for="HoTen" class="form-label">Họ và tên</label>
-                            <input type="text"
-                                   id="HoTen"
-                                   name="HoTen"
-                                   class="register-input"
-                                   placeholder="Ví dụ: Nguyễn Văn A"
-                                   required />
-                        </div>
-
-                        <div class="form-group-register">
-                            <label for="Email" class="form-label">Email</label>
-                            <input type="email"
-                                   id="Email"
-                                   name="Email"
-                                   class="register-input"
-                                   placeholder="name@example.com"
-                                   required />
-                        </div>
-
-                        <div class="form-group-register">
-                            <label for="MatKhau" class="form-label">Mật khẩu</label>
-                            <input type="password"
-                                   id="MatKhau"
-                                   name="MatKhau"
-                                   class="register-input"
-                                   placeholder="Ít nhất 6 ký tự"
-                                   required />
-                            <div class="password-note">
-                                Mật khẩu nên từ 6 ký tự trở lên và khó đoán (kết hợp chữ, số, ký tự đặc biệt).
-                            </div>
-                        </div>
-
-                        <div class="form-group-register">
-                            <label for="ConfirmPassword" class="form-label">Xác nhận mật khẩu</label>
-                            <input type="password"
-                                   id="ConfirmPassword"
-                                   name="ConfirmPassword"
-                                   class="register-input"
-                                   placeholder="Nhập lại mật khẩu"
-                                   required />
-                        </div>
-
-                        <div class="form-row-register" style="margin-top: 0.5rem;">
-                            <div class="form-group-register">
-                                <label for="DienThoai" class="form-label">Điện thoại</label>
-                                <input type="text"
-                                       id="DienThoai"
-                                       name="DienThoai"
-                                       class="register-input"
-                                       placeholder="Số điện thoại (không bắt buộc)" />
-                            </div>
-
-                            <div class="form-group-register">
-                                <label for="DiaChi" class="form-label">Địa chỉ</label>
-                                <input type="text"
-                                       id="DiaChi"
-                                       name="DiaChi"
-                                       class="register-input"
-                                       placeholder="Địa chỉ nhận hàng (không bắt buộc)" />
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-register" id="btnRegister">
-                            Đăng ký
-                        </button>
-
-                        <div class="register-footer">
-                            <p>
-                                Đã có tài khoản?
-                                <a href="@Url.Action("Login", "User")">Đăng nhập ngay</a>
-                            </p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const registerForm = document.getElementById("registerForm");
-        const btnRegister = document.getElementById("btnRegister");
 
-        if (registerForm && btnRegister) {
-            registerForm.addEventListener("submit", function () {
-                btnRegister.disabled = true;
-            });
-        }
-    });
-</script>
+<div class="right-box">
+
+<h2>Tạo tài khoản mới</h2>
+
+@if (ViewBag.Error != null)
+{
+<div class="error">@ViewBag.Error</div>
+}
+
+@using (Html.BeginForm("Register", "User", FormMethod.Post))
+{
+@Html.AntiForgeryToken()
+
+<label>Tên đăng nhập</label>
+<input type="text" name="TenDangNhap" required />
+
+<label>Họ và tên</label>
+<input type="text" name="HoTen" required />
+
+<label>Email</label>
+<input type="email" name="Email" required />
+
+<label>Mật khẩu</label>
+<input type="password" name="MatKhau" required />
+
+<label>Xác nhận mật khẩu</label>
+<input type="password" name="ConfirmPassword" required />
+
+<label>Số điện thoại</label>
+<input type="text" name="DienThoai" />
+
+<label>Địa chỉ</label>
+<input type="text" name="DiaChi" />
+
+<button type="submit">
+Đăng ký
+</button>
+}
+
+<p style="margin-top:15px;">
+Đã có tài khoản?
+<a href="@Url.Action("Login","User")">Đăng nhập</a>
+</p>
+
+</div>
+
+</div>
+
+</body>
+</html>

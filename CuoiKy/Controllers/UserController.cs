@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
@@ -303,6 +304,19 @@ namespace CuoiKy.Controllers
             string email = form["Email"];
             string dienThoai = form["DienThoai"];
             string diaChi = form["DiaChi"];
+
+            // Kiểm tra độ mạnh mật khẩu: ít nhất 8 ký tự, có 1 chữ thường và 1 chữ số
+            if (string.IsNullOrWhiteSpace(matKhau) || matKhau.Length < 8)
+            {
+                ViewBag.Error = "Mật khẩu phải có ít nhất 8 ký tự.";
+                return View();
+            }
+            var passwordPattern = @"^(?=.*[a-z])(?=.*\d).{8,}$";
+            if (!Regex.IsMatch(matKhau, passwordPattern))
+            {
+                ViewBag.Error = "Mật khẩu phải chứa ít nhất 1 chữ số và 1 chữ thường.";
+                return View();
+            }
 
             // Kiểm tra mật khẩu
             if (matKhau != confirmPassword)

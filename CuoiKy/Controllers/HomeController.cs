@@ -10,6 +10,7 @@ namespace CuoiKy.Controllers
     {
         public ActionResult Index()
         {
+            Response.ContentEncoding = System.Text.Encoding.UTF8;
             return View();
         }
 

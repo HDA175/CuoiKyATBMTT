@@ -1,16 +1,23 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>@ViewBag.Title - My ASP.NET Application</title>
+
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+
     <!-- Thêm Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+
     @Html.Action("NavPartial", "EvolStore")
+
     <div class="container body-content">
         @RenderBody()
     </div>
@@ -19,16 +26,18 @@
     <div class="to-top">
         <a href="#top"><i class="fa-solid fa-arrow-up"></i></a>
     </div>
-    @Html.Action("FooterPartial", "EvolStore")
 
+    @Html.Action("FooterPartial", "EvolStore")
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
 
+
     <!-- Thêm JavaScript để smooth scroll -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
             // Smooth scroll cho to-top button
             document.querySelector('.to-top a').addEventListener('click', function (e) {
                 e.preventDefault();
@@ -40,20 +49,89 @@
 
             // Hiển thị/ẩn nút to-top khi scroll
             const toTopBtn = document.querySelector('.to-top');
+
             window.addEventListener('scroll', function () {
                 if (window.pageYOffset > 300) {
+
                     toTopBtn.style.opacity = '1';
                     toTopBtn.style.visibility = 'visible';
+
                 } else {
+
                     toTopBtn.style.opacity = '0';
                     toTopBtn.style.visibility = 'hidden';
+
                 }
             });
 
             // Ẩn nút to-top ban đầu
             toTopBtn.style.opacity = '0';
             toTopBtn.style.visibility = 'hidden';
+
         });
     </script>
+
+
+
+    <!-- Mini client-side WAF: chặn DevTools và một số tổ hợp phím nguy hiểm -->
+    <script>
+        (function () {
+
+            // Chặn menu chuột phải
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                alert('Chuột phải đã bị vô hiệu hóa vì lý do bảo mật.');
+            });
+
+            // Chặn các phím mở DevTools / xem source
+            document.addEventListener('keydown', function (e) {
+
+                if (
+                    e.key === 'F12' ||
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                    (e.ctrlKey && (e.key === 'U' || e.key === 'S')) ||
+                    (e.metaKey && e.key === 'S')
+                ) {
+
+                    e.preventDefault();
+                    alert('Tổ hợp phím này đã bị chặn vì lý do bảo mật.');
+
+                }
+
+            });
+
+            // Phát hiện DevTools bằng cách đo thời gian thực thi
+            var lastCheck = performance.now();
+
+            setInterval(function () {
+
+                var start = performance.now();
+
+                // Đoạn mã rất nhỏ, nếu DevTools / debugger đang bật thời gian sẽ tăng bất thường
+                for (var i = 0; i < 1000; i++) { }
+
+                var end = performance.now();
+                var diff = end - start;
+
+                if (diff > 100) {
+
+                    alert('Phát hiện công cụ debug/DevTools. Truy cập bị chặn vì lý do bảo mật.');
+
+                    document.documentElement.innerHTML =
+                        '<html><head><title>Blocked</title></head>' +
+                        '<body style="font-family:Arial;text-align:center;margin-top:100px;">' +
+                        '<h1>Truy cập đã bị chặn</h1>' +
+                        '<p>Phát hiện công cụ Debug/DevTools đang hoạt động.</p>' +
+                        '</body></html>';
+
+                }
+
+                lastCheck = end;
+
+            }, 1000);
+
+        })();
+    </script>
+
 </body>
 </html>
