@@ -35,7 +35,9 @@ namespace CuoiKy
                 AuthenticationType = CookieAuthenticationDefaults.AuthenticationType,
                 LoginPath = new PathString("/User/Login"),
                 LogoutPath = new PathString("/User/Logout"),
-                ExpireTimeSpan = TimeSpan.FromDays(30),
+
+                // Tự động đăng xuất sau 5 phút không hoạt động
+                ExpireTimeSpan = TimeSpan.FromMinutes(5),
                 SlidingExpiration = true
             });
 

@@ -32,6 +32,14 @@ namespace CuoiKy.Controllers
         [HttpPost]
         public ActionResult Login(string username, string password)
         {
+            // Xác minh reCAPTCHA
+            var captchaResponse = Request["g-recaptcha-response"];
+            if (!SecurityHelper.VerifyReCaptcha(captchaResponse, Request.UserHostAddress))
+            {
+                ViewBag.Error = "Vui lòng xác nhận reCAPTCHA.";
+                return View();
+            }
+
             var admin = db.TaiKhoans.FirstOrDefault(t =>
                 t.TenDangNhap == username &&
                 (t.VaiTro == "Admin" || t.VaiTro == "NhanVien" || t.VaiTro == "NhanVienKho"));

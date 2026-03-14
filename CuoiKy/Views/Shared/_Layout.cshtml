@@ -19,6 +19,32 @@
     @Html.Action("NavPartial", "EvolStore")
 
     <div class="container body-content">
+        @* Thông báo chung: thành công / lỗi / thông tin *@
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success" style="margin-top:10px;">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" style="margin-top:10px;">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+        @if (TempData["InfoMessage"] != null)
+        {
+            <div class="alert alert-info" style="margin-top:10px;">
+                @TempData["InfoMessage"]
+            </div>
+        }
+        else if (Request["autoLogout"] != null)
+        {
+            <div class="alert alert-info" style="margin-top:10px;">
+                Tài khoản đã tự động đăng xuất do không sử dụng trong 5 phút.
+            </div>
+        }
+
         @RenderBody()
     </div>
 
@@ -132,6 +158,31 @@
 
         })();
     </script>
+
+    <!-- Tự động đăng xuất sau 5 phút không hoạt động -->
+    @if (Session["MaKH"] != null)
+    {
+        <script>
+            (function () {
+                var logoutUrl = '@Url.Action("AutoLogout", "Account")';
+                var timeoutMs = 5 * 60 * 1000; // 5 phút
+                var timer;
+
+                function resetTimer() {
+                    clearTimeout(timer);
+                    timer = setTimeout(function () {
+                        window.location = logoutUrl;
+                    }, timeoutMs);
+                }
+
+                document.addEventListener('mousemove', resetTimer);
+                document.addEventListener('keydown', resetTimer);
+                document.addEventListener('click', resetTimer);
+
+                resetTimer();
+            })();
+        </script>
+    }
 
 </body>
 </html>

@@ -1,7 +1,10 @@
 using System;
+using System.Configuration;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace CuoiKy.Utils
 {
@@ -149,6 +152,41 @@ namespace CuoiKy.Utils
             // Loại bỏ thẻ HTML cơ bản
             trimmed = Regex.Replace(trimmed, @"<[^>]+>", "");
             return trimmed;
+        }
+        #endregion
+
+        #region reCAPTCHA - Xác minh người dùng thật
+        /// <summary>
+        /// Xác minh token reCAPTCHA với API của Google.
+        /// </summary>
+        public static bool VerifyReCaptcha(string responseToken, string userIp = null)
+        {
+            if (string.IsNullOrWhiteSpace(responseToken))
+                return false;
+
+            var secret = ConfigurationManager.AppSettings["ReCaptchaSecretKey"];
+            if (string.IsNullOrWhiteSpace(secret))
+                return false;
+
+            try
+            {
+                using (var client = new WebClient())
+                {
+                    var uri = $"https://www.google.com/recaptcha/api/siteverify?secret={secret}&response={responseToken}";
+                    if (!string.IsNullOrEmpty(userIp))
+                    {
+                        uri += "&remoteip=" + Uri.EscapeDataString(userIp);
+                    }
+
+                    var googleReply = client.DownloadString(uri);
+                    dynamic json = JsonConvert.DeserializeObject(googleReply);
+                    return json != null && json.success == true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
         #endregion
     }

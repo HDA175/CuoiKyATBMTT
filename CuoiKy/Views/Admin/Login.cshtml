@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = null;
 }
 
@@ -132,6 +132,7 @@
         }
 
         <form action="@Url.Action("Login")" method="post">
+            @Html.AntiForgeryToken()
             <div class="form-group">
                 <label for="username">Tên đăng nhập:</label>
                 <input type="text" id="username" name="username" required>
@@ -140,6 +141,10 @@
             <div class="form-group">
                 <label for="password">Mật khẩu:</label>
                 <input type="password" id="password" name="password" required>
+            </div>
+
+            <div class="form-group">
+                <div class="g-recaptcha" data-sitekey="@System.Configuration.ConfigurationManager.AppSettings["ReCaptchaSiteKey"]"></div>
             </div>
 
             <button type="submit" class="btn-login">ĐĂNG NHẬP</button>
@@ -156,5 +161,7 @@
             Mật khẩu: <strong>123456</strong>
         </div>
     </div>
+
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </body>
 </html>

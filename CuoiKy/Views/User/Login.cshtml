@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = null;
     ViewBag.Title = "Đăng nhập";
     string returnUrl = ViewBag.ReturnUrl as string;
@@ -339,7 +339,20 @@
             <div class="col-lg-6 login-right">
                 <div class="login-inner">
                     <h2 class="login-title mb-1">Welcome back 👋</h2>
-                    
+
+                    @* Thông báo lỗi / thông tin *@
+                    @if (TempData["AutoLogoutMessage"] != null)
+                    {
+                        <div class="alert alert-info" style="margin: 8px 0 16px 0; padding: 10px 12px; border-radius: 8px;">
+                            @TempData["AutoLogoutMessage"]
+                        </div>
+                    }
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger" style="margin: 8px 0 16px 0; padding: 10px 12px; border-radius: 8px;">
+                            @ViewBag.Error
+                        </div>
+                    }
 
                     @* FORM ĐĂNG NHẬP *@
                     @using (Html.BeginForm("Login", "User", FormMethod.Post, new { @class = "form-horizontal", id = "loginForm" }))
@@ -398,6 +411,10 @@
                                 <label class="form-check-label" for="RememberMe">Ghi nhớ đăng nhập</label>
                             </div>
                             <a href="#" class="link-small">Quên mật khẩu?</a>
+                        </div>
+
+                        <div class="form-group-login" style="margin-bottom: 1rem;">
+                            <div class="g-recaptcha" data-sitekey="@System.Configuration.ConfigurationManager.AppSettings["ReCaptchaSiteKey"]"></div>
                         </div>
 
                         <button type="submit" class="login-btn" id="btnLogin">
@@ -473,3 +490,5 @@
         }
     });
 </script>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>

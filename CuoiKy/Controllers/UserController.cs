@@ -46,6 +46,15 @@ namespace CuoiKy.Controllers
 
             Debug.WriteLine($"Login attempt: {tenDangNhap}, ReturnUrl: {returnUrl}");
 
+            // Xác minh reCAPTCHA
+            var captchaResponse = Request["g-recaptcha-response"];
+            if (!SecurityHelper.VerifyReCaptcha(captchaResponse, Request.UserHostAddress))
+            {
+                ViewBag.Error = "Vui lòng xác nhận reCAPTCHA.";
+                ViewBag.ReturnUrl = returnUrl;
+                return View();
+            }
+
             // Tìm tài khoản
             var taiKhoan = db.TaiKhoans.FirstOrDefault(tk => tk.TenDangNhap == tenDangNhap);
 
@@ -305,6 +314,14 @@ namespace CuoiKy.Controllers
             string dienThoai = form["DienThoai"];
             string diaChi = form["DiaChi"];
 
+            // Xác minh reCAPTCHA
+            var captchaResponse = Request["g-recaptcha-response"];
+            if (!SecurityHelper.VerifyReCaptcha(captchaResponse, Request.UserHostAddress))
+            {
+                ViewBag.Error = "Vui lòng xác nhận reCAPTCHA.";
+                return View();
+            }
+
             // Kiểm tra độ mạnh mật khẩu: ít nhất 8 ký tự, có 1 chữ thường và 1 chữ số
             if (string.IsNullOrWhiteSpace(matKhau) || matKhau.Length < 8)
             {
@@ -403,6 +420,7 @@ namespace CuoiKy.Controllers
             }
 
             Debug.WriteLine("User logged out");
+            TempData["InfoMessage"] = "Bạn đã đăng xuất thành công.";
             return RedirectToAction("Index", "EvolStore");
         }
 

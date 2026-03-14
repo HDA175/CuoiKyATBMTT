@@ -332,7 +332,18 @@ namespace CuoiKy.Controllers
             Session.Clear();
             Session.Abandon();
             FormsAuthentication.SignOut();
+            TempData["InfoMessage"] = "Bạn đã đăng xuất thành công.";
             return RedirectToAction("Index", "EvolStore");
+        }
+
+        // GET: Account/AutoLogout - dùng cho kịch bản tự động đăng xuất sau 5 phút không hoạt động
+        public ActionResult AutoLogout()
+        {
+            Session.Clear();
+            Session.Abandon();
+            FormsAuthentication.SignOut();
+            // Dùng query string để chắc chắn thông báo không bị mất qua redirect
+            return RedirectToAction("Index", "EvolStore", new { autoLogout = 1 });
         }
     }
 
